@@ -5,6 +5,7 @@ const consola = require('consola')
 const myLib = require('./lib')
 const axios = require('axios')
 const qs = require('querystring')
+var passportService = require('passport-spotify')(passport)
 
 let backend = express.Router()
 require('dotenv').config()

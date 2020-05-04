@@ -6,9 +6,9 @@
   "private": true,
   "scripts": {
     "dev": "cross-env NODE_ENV=development nodemon server/index.js --watch server --watch api",
-    "build": "nuxt build",
+    "build": "./node_modules/.bin/nuxt build",
     "start": "cross-env NODE_ENV=production node server/index.js",
-    "generate": "nuxt generate",
+    "generate": "./node_modules/.bin/nuxt generate",
     "heroku-postbuild": "npm run build"
   },
   "dependencies": {
@@ -18,8 +18,8 @@
     "express": "^4.16.4",
     "express-session": "^1.17.1",
     "nuxt": "^2.12.2",
-    "passport-spotify": "^1.1.0",
     "passport": "^0.4.1",
+    "passport-spotify": "^1.1.0",
     "querystring": "^0.2.0"
   },
   "devDependencies": {

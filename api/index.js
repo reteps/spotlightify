@@ -13,13 +13,13 @@ passport.use(myLib.session)
 function getTracks(url, auth, currentTracks=[]) {
   return axios.get(url, {headers: {
     'Authorization' : `Bearer ${auth}`
-  }}).then(res => {
-    consola.log(url, "=>", res.data.next)
-    if (res.data.items !== undefined) {
-      currentTracks = currentTracks.concat(res.data.items)
+  }}).then(resp => {
+    consola.log(url, "=>", resp.data.next)
+    if (resp.data.items !== undefined) {
+      currentTracks = currentTracks.concat(resp.data.items)
     }
-    if (res.data.next) {
-      return getTracks(res.data.next, auth, currentTracks)
+    if (resp.data.next) {
+      return getTracks(resp.data.next, auth, currentTracks)
     } else {
       console.log(`There are ${currentTracks.length} songs.`)
       return currentTracks

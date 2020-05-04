@@ -5,6 +5,7 @@ const backend = require('../api/index')
 const { Nuxt, Builder } = require('nuxt')
 const passport = require('passport')
 require('dotenv').config()
+const SpotifyStrategy = require('passport-spotify').Strategy;
 
 const app = express()
 const config = require('../nuxt.config.js')
@@ -19,11 +20,24 @@ passport.deserializeUser(function (obj, done) {
   done(null, obj);
 })
 passport.use(myLib.session)
-passport.use(myLib.spotifyStrategy)
+passport.use(new SpotifyStrategy({
+        clientID: process.env.CLIENT_ID,
+        clientSecret: process.env.CLIENT_SECRET,
+        callbackURL: process.env.BASE_URL + '/api/callback'
+      },
+      function (accessToken, refreshToken, expires_in, profile, done) {
+        process.nextTick(function () { // On next DOM update
+          return done(null, {
+            access: accessToken,
+            refresh: refreshToken
+          }); // resolve with the profile
+        });
+      }
+    ))
 app.use(passport.initialize())
 app.use(passport.session())
 app.use('/app', myLib.checkAuth)
-app.use('/api', backend(passport))
+app.use('/api', backend)
 app.get('/logout', function (req, res) {
     req.session.destroy(function (err) {
       res.redirect('/')

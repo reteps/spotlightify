@@ -16,7 +16,7 @@ passport.use(
   new SpotifyStrategy({
       clientID: process.env.CLIENT_ID,
       clientSecret: process.env.CLIENT_SECRET,
-      callbackURL: 'http://localhost:3000/api/callback'
+      callbackURL: process.env.BASE_URL + '/api/callback'
     },
     function (accessToken, refreshToken, expires_in, profile, done) {
       process.nextTick(function () { // On next DOM update

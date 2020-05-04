@@ -5,20 +5,30 @@
   "author": "Peter Stenger",
   "private": true,
   "scripts": {
-    "dev": "cross-env NODE_ENV=development nodemon server/index.js --watch server",
+    "dev": "cross-env NODE_ENV=development nodemon server/index.js --watch server --watch api",
     "build": "nuxt build",
     "start": "cross-env NODE_ENV=production node server/index.js",
-    "generate": "nuxt generate"
+    "generate": "nuxt generate",
+    "heroku-postbuild": "npm run build"
   },
   "dependencies": {
-    "nuxt": "^2.0.0",
+    "@nuxtjs/auth": "^4.9.1",
+    "@nuxtjs/axios": "^5.10.3",
+    "@nuxtjs/dotenv": "^1.4.0",
     "cross-env": "^5.2.0",
+    "element-ui": "^2.13.1",
     "express": "^4.16.4",
-    "@nuxtjs/axios": "^5.3.6",
-    "@nuxtjs/dotenv": "^1.4.0"
+    "express-session": "^1.17.1",
+    "nuxt": "^2.0.0",
+    "passport": "^0.4.1",
+    "passport-spotify": "^1.1.0",
+    "spotify-web-api-node": "^4.0.0"
   },
   "devDependencies": {
+    "@nuxt/typescript-build": "^0.6.0",
+    "@nuxtjs/vuetify": "^1.11.2",
+    "node-sass": "^4.14.0",
     "nodemon": "^1.18.9",
-    "@nuxt/typescript-build": "^0.6.0"
+    "sass-loader": "^8.0.2"
   }
 }

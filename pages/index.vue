@@ -1,40 +1,25 @@
 <template>
   <div class="container">
-    <div>
-      <logo />
-      <h1 class="title">
-        spotify-nodes
-      </h1>
-      <h2 class="subtitle">
-        A project with spotify and nuxt.js
-      </h2>
-      <div class="links">
-        <a
-          href="https://nuxtjs.org/"
-          target="_blank"
-          class="button--green"
-        >
-          Documentation
-        </a>
-        <a
-          href="https://github.com/nuxt/nuxt.js"
-          target="_blank"
-          class="button--grey"
-        >
-          GitHub
-        </a>
-      </div>
-    </div>
+  <a href="/api/auth">Actual login</a>
   </div>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
-import Logo from '~/components/Logo.vue'
+import axios from "axios"
 
 export default Vue.extend({
-  components: {
-    Logo
+  methods: {
+    login: function(e) {
+      console.log('clicked.')
+      axios.get('/api/auth').then(res => {
+        console.log(res)
+        this.$router.push('/app')
+      })
+      .catch(err => {
+        console.log(`ERR: ${err}`)
+      })
+    }
   }
 })
 </script>

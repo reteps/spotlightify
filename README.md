@@ -30,3 +30,7 @@ layouts is for application wide navigation changes using nuxt-link
 components is for plain ol vue components
 assets is for pictures and shit
 server is for the server
+
+# Vuex notes
+
+

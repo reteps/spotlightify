@@ -27,8 +27,6 @@ module.exports = {
   /*
   ** Plugins to load before mounting the App
   */
-  plugins: [
-  ],
   /*
   ** Nuxt.js dev-modules
   */
@@ -57,7 +55,17 @@ module.exports = {
     /*
     ** You can extend webpack config here
     */
+    watch: ['api'], // When building for production, include api folder
     extend (config, ctx) {
     }
-  }
+  },
+  env: {
+    // Lets use our new .env variables
+    clientID: process.env.CLIENT_ID,
+    baseURL: process.env.BASE_URL
+  },
+  serverMiddleware: [{
+    path: '/api', handler: '~/api/index.js'
+  }],
+  middleware: ['ssr-cookie']
 }

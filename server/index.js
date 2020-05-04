@@ -3,17 +3,14 @@ const consola = require('consola')
 const myLib = require('../api/lib')
 
 const { Nuxt, Builder } = require('nuxt')
-const app = express()
 const passport = require('passport')
 require('dotenv').config()
 
-// Import and Set Nuxt.js options
+const app = express()
 const config = require('../nuxt.config.js')
 config.dev = process.env.NODE_ENV !== 'production'
-var session = require('express-session')
-passport.use(
-  myLib.spotifyStrategy
-)
+
+passport.use(myLib.spotifyStrategy)
 passport.serializeUser(function (tokens, done) {
   done(null, tokens);
 })
@@ -21,11 +18,7 @@ passport.serializeUser(function (tokens, done) {
 passport.deserializeUser(function (obj, done) {
   done(null, obj);
 })
-app.use(session({
-  secret: 'cool spotify',
-  resave: true,
-  saveUninitialized: true,
-}))
+passport.use(myLib.session)
 app.use(passport.initialize())
 app.use(passport.session())
 app.use('/app', myLib.checkAuth)

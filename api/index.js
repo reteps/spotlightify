@@ -7,10 +7,8 @@ const axios = require('axios')
 const qs = require('querystring')
 require('dotenv').config()
 let backend = express.Router()
-
-passport.use(
-  myLib.spotifyStrategy
-)
+passport.use(myLib.spotifyStrategy)
+passport.use(myLib.session)
 
 function getTracks(url, auth, currentTracks=[]) {
   return axios.get(url, {headers: {

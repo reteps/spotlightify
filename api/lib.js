@@ -1,4 +1,5 @@
 require('dotenv').config()
+const expressSession = require('express-session')
 const SpotifyStrategy = require('passport-spotify').Strategy;
 
 const checkAuth = (req, res, next) => {
@@ -23,4 +24,9 @@ const spotifyStrategy = new SpotifyStrategy({
       });
     }
   )
-module.exports = { checkAuth, spotifyStrategy }
+const session = expressSession({
+  secret: 'cool spotify',
+  resave: true,
+  saveUninitialized: true,
+})
+module.exports = { session, checkAuth, spotifyStrategy }

@@ -3,7 +3,7 @@ const checkAuth = (req, res, next) => {
     console.log('Request is authenticated.')
     next();
   } else {
-    res.redirect('/')
+    res.send({message: 'Not authenticated'})
   }
 }
 module.exports = { checkAuth}

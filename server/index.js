@@ -39,16 +39,10 @@ app.use(session({
 }))
 app.use(passport.initialize())
 app.use(passport.session())
-// app.use(function (req, res, next) {
-//   res.header('Access-Control-Allow-Credentials', true);
-//   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-//   res.header('Access-Control-Allow-Origin',req.headers.origin)
-//   next()
-// })
 app.use('/app', myLib.checkAuth)
 app.get('/logout', function (req, res) {
     req.session.destroy(function (err) {
-      res.redirect('/'); // Make sure that we redirect AFTER session is destroyed
+      res.redirect('/')
     })
 });
 async function start () {
@@ -66,7 +60,6 @@ async function start () {
 
   // Give nuxt middleware to express
   app.use(nuxt.render)
-  // Use passport and persistent sessions
 
   // Listen the server
   app.listen(port, host)

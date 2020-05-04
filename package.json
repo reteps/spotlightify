@@ -12,21 +12,18 @@
     "heroku-postbuild": "npm run build"
   },
   "dependencies": {
-    "@nuxtjs/auth": "^4.9.1",
     "@nuxtjs/axios": "^5.10.3",
     "@nuxtjs/dotenv": "^1.4.0",
     "cross-env": "^5.2.0",
-    "element-ui": "^2.13.1",
     "express": "^4.16.4",
     "express-session": "^1.17.1",
     "nuxt": "^2.0.0",
     "passport": "^0.4.1",
     "passport-spotify": "^1.1.0",
-    "spotify-web-api-node": "^4.0.0"
+    "querystring": "^0.2.0"
   },
   "devDependencies": {
     "@nuxt/typescript-build": "^0.6.0",
-    "@nuxtjs/vuetify": "^1.11.2",
     "node-sass": "^4.14.0",
     "nodemon": "^1.18.9",
     "sass-loader": "^8.0.2"

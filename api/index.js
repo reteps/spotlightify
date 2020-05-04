@@ -5,30 +5,13 @@ const consola = require('consola')
 const myLib = require('./lib')
 const axios = require('axios')
 const qs = require('querystring')
-// var passportService = require('passport-spotify')(passport)
-// passport.use(
-//   new SpotifyStrategy({
-//       clientID: process.env.CLIENT_ID,
-//       clientSecret: process.env.CLIENT_SECRET,
-//       callbackURL: 'http://localhost:3000/api/callback'
-//     },
-//     function (accessToken, refreshToken, expires_in, profile, done) {
-//       process.nextTick(function () { // On next DOM update
-//         return done(null, {
-//           access: accessToken,
-//           refresh: refreshToken
-//         }); // resolve with the profile
-//       });
-//     }
-//   )
-// )
-let backend = express.Router()
 require('dotenv').config()
-let session = {
-  'secret': 'cool spotify',
-  resave: true,
-  saveUninitialized: true,
-}
+let backend = express.Router()
+
+passport.use(
+  myLib.spotifyStrategy
+)
+
 function getTracks(url, auth, currentTracks=[]) {
   return axios.get(url, {headers: {
     'Authorization' : `Bearer ${auth}`

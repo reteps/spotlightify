@@ -1,3 +1,6 @@
+require('dotenv').config()
+const SpotifyStrategy = require('passport-spotify').Strategy;
+
 const checkAuth = (req, res, next) => {
   if (req.isAuthenticated()) {
     console.log('Request is authenticated.')
@@ -6,4 +9,18 @@ const checkAuth = (req, res, next) => {
     res.send({message: 'Not authenticated'})
   }
 }
-module.exports = { checkAuth}
+const spotifyStrategy = new SpotifyStrategy({
+      clientID: process.env.CLIENT_ID,
+      clientSecret: process.env.CLIENT_SECRET,
+      callbackURL: process.env.BASE_URL + '/api/callback'
+    },
+    function (accessToken, refreshToken, expires_in, profile, done) {
+      process.nextTick(function () { // On next DOM update
+        return done(null, {
+          access: accessToken,
+          refresh: refreshToken
+        }); // resolve with the profile
+      });
+    }
+  )
+module.exports = { checkAuth, spotifyStrategy }

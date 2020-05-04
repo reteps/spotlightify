@@ -5,7 +5,6 @@ const myLib = require('../api/lib')
 const { Nuxt, Builder } = require('nuxt')
 const app = express()
 const passport = require('passport')
-const SpotifyStrategy = require('passport-spotify').Strategy;
 require('dotenv').config()
 
 // Import and Set Nuxt.js options
@@ -13,17 +12,7 @@ const config = require('../nuxt.config.js')
 config.dev = process.env.NODE_ENV !== 'production'
 var session = require('express-session')
 passport.use(
-  new SpotifyStrategy({
-      clientID: process.env.CLIENT_ID,
-      clientSecret: process.env.CLIENT_SECRET,
-      callbackURL: process.env.BASE_URL + '/api/callback'
-    },
-    function (accessToken, refreshToken, expires_in, profile, done) {
-      process.nextTick(function () { // On next DOM update
-        return done(null, {access: accessToken, refresh: refreshToken}); // resolve with the profile
-      });
-    }
-  )
+  myLib.spotifyStrategy
 )
 passport.serializeUser(function (tokens, done) {
   done(null, tokens);

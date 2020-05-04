@@ -2,8 +2,8 @@ require('dotenv').config()
 const expressSession = require('express-session')
 const SpotifyStrategy = require('passport-spotify').Strategy;
 
-const checkAuth = (req, res, next) => {
-  if (req.isAuthenticated()) {
+const checkAuth = (aReq, res, next) => {
+  if (aReq.isAuthenticated()) {
     console.log('Request is authenticated.')
     next();
   } else {

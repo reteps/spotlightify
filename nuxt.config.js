@@ -64,8 +64,5 @@ module.exports = {
     clientID: process.env.CLIENT_ID,
     baseURL: process.env.BASE_URL
   },
-  serverMiddleware: [{
-    path: '/api', handler: '~/api/index.js'
-  }],
   middleware: ['ssr-cookie']
 }

@@ -1,5 +1,8 @@
 
 module.exports = {
+  server: {
+    port: 3000
+  },
   mode: 'universal',
   /*
   ** Headers of the page
@@ -64,5 +67,8 @@ module.exports = {
     clientID: process.env.CLIENT_ID,
     baseURL: process.env.BASE_URL
   },
-  middleware: ['ssr-cookie']
+  middleware: ['ssr-cookie'],
+  serverMiddleware: [
+    { path: '/api', handler: '~/api/index.js' },
+  ]
 }

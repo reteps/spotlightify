@@ -5,19 +5,20 @@ const consola = require('consola')
 const myLib = require('./lib')
 const axios = require('axios')
 const qs = require('querystring')
-require('dotenv').config()
 
+let backend = express.Router()
+require('dotenv').config()
 
 function getTracks(url, auth, currentTracks=[]) {
   return axios.get(url, {headers: {
     'Authorization' : `Bearer ${auth}`
-  }}).then(resp => {
-    consola.log(url, "=>", resp.data.next)
-    if (resp.data.items !== undefined) {
-      currentTracks = currentTracks.concat(resp.data.items)
+  }}).then(res => {
+    consola.log(url, "=>", res.data.next)
+    if (res.data.items !== undefined) {
+      currentTracks = currentTracks.concat(res.data.items)
     }
-    if (resp.data.next) {
-      return getTracks(resp.data.next, auth, currentTracks)
+    if (res.data.next) {
+      return getTracks(res.data.next, auth, currentTracks)
     } else {
       console.log(`There are ${currentTracks.length} songs.`)
       return currentTracks
@@ -26,8 +27,6 @@ function getTracks(url, auth, currentTracks=[]) {
     console.log(err)
   })
 }
-
-let backend = express.Router()
 backend.get('/', (req, res) => {
   res.send('<h1>Api working!</h1>')
 })
@@ -56,7 +55,7 @@ backend.get('/songs', (req, res, next) => {
   })
 })
 backend.get('/me', myLib.checkAuth, (req, res, next) => {
-  res.json({message: req.user.refresh})
+  res.json({message: req.user.access})
 })
 backend.get('/refresh/:token', (req, res) => {
   if (!req.params.token) {
@@ -65,15 +64,16 @@ backend.get('/refresh/:token', (req, res) => {
     })
   }
   const encodedClient = Buffer.from(process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET).toString('base64')
-  const requestBody = {
+  axios.post('https://accounts.spotify.com/api/token', null, {
+      params: {
         grant_type: 'refresh_token',
         refresh_token: req.params.token
-  }
-  axios.post('https://accounts.spotify.com/api/token', qs.stringify(requestBody),
-      {headers: {
+      },
+      headers: {
       'Authorization': `Basic ${encodedClient}`,
       'Content-Type': 'application/x-www-form-urlencoded'
-      }}).then(res => {
+      }
+    }).then(res => {
     return res.data
   }).then(data => {
     res.json(data)

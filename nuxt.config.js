@@ -1,8 +1,8 @@
 
 module.exports = {
-  server: {
-    port: 3000
-  },
+  // server: {
+  //   port: 3000
+  // },
   mode: 'universal',
   /*
   ** Headers of the page

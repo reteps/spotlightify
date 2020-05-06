@@ -39,7 +39,9 @@ export default {
     },
     testRefresh: function(e) {
       axios.get(`/api/refresh/${this.message}`).then(res => {
-        console.log(res)
+        return axios.get(`/api/songs/${res.data.access_token}`)
+      }).then(res => {
+        console.log(res.data)
       })
     }
   }

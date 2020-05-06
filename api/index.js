@@ -38,10 +38,10 @@ backend.get('/callback',
 passport.authenticate('spotify',
 {failureRedirect: '/', successRedirect: '/app'}))
 
-backend.get('/songs', (req, res, next) => {
-  token = null
-  if (req.query.token !== undefined) {
-    token = req.query.token
+backend.get('/songs/:token?', (req, res, next) => {
+  let token = null
+  if (req.params.token !== undefined) {
+    token = req.params.token
   } else if (req.isAuthenticated()) {
     token = req.user.access
   } else {
@@ -49,13 +49,14 @@ backend.get('/songs', (req, res, next) => {
   }
   console.log('Running.')
   getTracks("https://api.spotify.com/v1/me/tracks?offset=0&limit=50", token)
-  .then(data => {
-    console.log('Received:', data)
-    res.json(data)
+  .then(rawSongs => {
+    const songs = myLib.restructure(rawSongs)
+    console.log('Received:', songs)
+    res.json(songs)
   })
 })
 backend.get('/me', myLib.checkAuth, (req, res, next) => {
-  res.json({message: req.user.access})
+  res.json({message: req.user.refresh})
 })
 backend.get('/refresh/:token', (req, res) => {
   if (!req.params.token) {

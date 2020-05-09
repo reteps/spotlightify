@@ -6,7 +6,10 @@ const myLib = require('./lib')
 const axios = require('axios')
 const qs = require('querystring')
 
+const ENCODED_CLIENT = Buffer.from(process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET).toString('base64')
+
 let backend = express.Router()
+backend.use(express.json())
 require('dotenv').config()
 
 function getTracks(url, auth, currentTracks=[]) {
@@ -27,6 +30,35 @@ function getTracks(url, auth, currentTracks=[]) {
     console.log(err)
   })
 }
+function getArtists(token, artistIDs) {
+  return new Promise( (resolve, reject) => {
+    let artists = []
+
+    console.log('Backend got  request')
+    for (let i = 0; i < artistIDs.length; i += 50) {
+      let end = (artistIDs.length > i + 50) ? (artistIDs.length - i) : i + 50
+      let part = artistIDs.slice(i, i + 50)
+      console.log(part[0])
+      axios.get("https://api.spotify.com/v1/artists", {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        params: {
+          ids: part.join(',')
+        }
+      }).then(resp => {
+        console.log(artists.length)
+        artists.push(...resp.data.artists)
+        if (artistIDs.length == artists.length) {
+          resolve(artists)
+        }
+      }).catch(err => {
+        reject(err)
+      })
+    }
+
+  })
+}
 backend.get('/', (req, res) => {
   res.send('<h1>Api working!</h1>')
 })
@@ -45,7 +77,7 @@ backend.get('/songs/:token?', (req, res, next) => {
   } else if (req.isAuthenticated()) {
     token = req.user.access
   } else {
-    res.status.send({message: 'Not authenticated'})
+    res.status(400).send({message: 'Not authenticated'})
   }
   console.log('Running.')
   getTracks("https://api.spotify.com/v1/me/tracks?offset=0&limit=50", token)
@@ -58,20 +90,27 @@ backend.get('/songs/:token?', (req, res, next) => {
 backend.get('/me', myLib.checkAuth, (req, res, next) => {
   res.json({message: req.user.refresh})
 })
+backend.post('/artists', myLib.checkAuth, (req, res) => {
+  getArtists(req.user.access,  req.body)
+  .then(artists => {
+    res.json(artists)
+  }).catch(err => {
+    res.status(500).send({message: err})
+  })
+})
 backend.get('/refresh/:token', (req, res) => {
   if (!req.params.token) {
     res.status(400).send({
       message: 'Token cannot be none'
     })
   }
-  const encodedClient = Buffer.from(process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET).toString('base64')
   axios.post('https://accounts.spotify.com/api/token', null, {
       params: {
         grant_type: 'refresh_token',
         refresh_token: req.params.token
       },
       headers: {
-      'Authorization': `Basic ${encodedClient}`,
+      'Authorization': `Basic ${ENCODED_CLIENT}`,
       'Content-Type': 'application/x-www-form-urlencoded'
       }
     }).then(res => {

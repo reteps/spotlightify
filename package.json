@@ -15,12 +15,14 @@
     "@nuxtjs/axios": "^5.10.3",
     "@nuxtjs/dotenv": "^1.4.0",
     "cross-env": "^5.2.0",
+    "d3": "^5.16.0",
     "express": "^4.16.4",
     "express-session": "^1.17.1",
     "nuxt": "^2.12.2",
     "passport": "^0.4.1",
     "passport-spotify": "^1.1.0",
-    "querystring": "^0.2.0"
+    "querystring": "^0.2.0",
+    "subgenre.js": "^1.0.2"
   },
   "devDependencies": {
     "@nuxt/typescript-build": "^0.6.0",

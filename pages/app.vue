@@ -173,10 +173,10 @@ export default {
     },
     testRefresh: function(e) {
       axios.get(`/api/refresh/${this.message}`).then(res => {
-        return axios.get(`/api/songs/${res.data.access_token}`)]
+        return axios.get(`/api/songs/${res.data.access_token}`)
 
 
-        
+
       }).then(res => {
         console.log(res.data.length)
         return generateNodesAndLinks(res.data)

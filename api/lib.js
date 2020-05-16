@@ -1,14 +1,21 @@
+"use strict"
 const expressSession = require('express-session')
 const subgenre = require('subgenre.js')
 const axios = require('axios')
+const passport = require('passport')
 
-const checkAuth = (req, res, next) => {
+const checkAuth = (BASEURL) => {
+  return (req, res, next) => {
   if (req.isAuthenticated()) {
     console.log('Request is authenticated.')
     next();
   } else {
+    if (req.originalUrl.slice(0,4) == '/api') {
+      res.status(400).send({message: 'not authenticated'})
+    }
     res.redirect('/api/auth')
     //res.send({message: 'Not authenticated'})
+  }
   }
 }
 const session = expressSession({
@@ -244,4 +251,12 @@ function getArtists(token, artistIDs) {
 
   })
 }
-module.exports = { session, checkAuth, restructure, generateNodesAndLinks, getAllArtists, getTracks, getArtists }
+module.exports = {
+  session,
+  checkAuth,
+  restructure,
+  generateNodesAndLinks,
+  getAllArtists,
+  getTracks,
+  getArtists
+}

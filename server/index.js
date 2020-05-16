@@ -31,13 +31,17 @@
   app.use(myLib.session)
   app.use(passport.initialize())
   app.use(passport.session())
-app.use('/app', myLib.checkAuth)
+app.use('/app', myLib.checkAuth(process.env.BASE_URL))
 app.get('/logout', function (req, res) {
   req.session.destroy(function (err) {
     res.redirect('/'); // Make sure that we redirect AFTER session is destroyed
   })
 });
-
+  app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+  });
   config.dev = process.env.NODE_ENV !== 'production'
 
   async function start () {

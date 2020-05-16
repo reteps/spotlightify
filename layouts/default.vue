@@ -13,7 +13,7 @@ export default {
   components: {MenuBar},
   errorCaptured (err, vm, info) {
     console.log(`err:${err}`)
-    vm.$toast.info(err.message)
+    vm.$toast.info('ERR' + err.message)
     return false
   },
 }

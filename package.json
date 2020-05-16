@@ -22,10 +22,14 @@
     "passport": "^0.4.1",
     "passport-spotify": "^1.1.0",
     "querystring": "^0.2.0",
-    "subgenre.js": "^1.0.2"
+    "subgenre.js": "^1.0.2",
+    "vue-snack": "^0.1.4",
+    "vuetify": "^2.2.28",
+    "vuetify-toast-snackbar": "^0.6.1"
   },
   "devDependencies": {
     "@nuxt/typescript-build": "^0.6.0",
+    "@nuxtjs/vuetify": "^1.11.2",
     "node-sass": "^4.14.0",
     "nodemon": "^1.18.9",
     "sass-loader": "^8.0.2"

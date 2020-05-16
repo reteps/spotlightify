@@ -1,11 +1,14 @@
 const expressSession = require('express-session')
 const subgenre = require('subgenre.js')
+const axios = require('axios')
+
 const checkAuth = (req, res, next) => {
   if (req.isAuthenticated()) {
     console.log('Request is authenticated.')
     next();
   } else {
-    res.send({message: 'Not authenticated'})
+    res.redirect('/api/auth')
+    //res.send({message: 'Not authenticated'})
   }
 }
 const session = expressSession({
@@ -191,5 +194,54 @@ const generateNodesAndLinks = (songs, artists) => {
     nodes
   }
 }
+function getTracks(url, auth, currentTracks = []) {
+  return axios.get(url, {
+    headers: {
+      'Authorization': `Bearer ${auth}`
+    }
+  }).then(res => {
+    consola.log(url, "=>", res.data.next)
+    if (res.data.items !== undefined) {
+      currentTracks = currentTracks.concat(res.data.items)
+    }
+    if (res.data.next) {
+      return getTracks(res.data.next, auth, currentTracks)
+    } else {
+      console.log(`There are ${currentTracks.length} songs.`)
+      return currentTracks
+    }
+  }).catch(err => {
+    console.log(err)
+  })
+}
 
-module.exports = { session, checkAuth, restructure, generateNodesAndLinks, getAllArtists }
+function getArtists(token, artistIDs) {
+  return new Promise((resolve, reject) => {
+    let artists = []
+
+    console.log('Backend got  request')
+    for (let i = 0; i < artistIDs.length; i += 50) {
+      let end = (artistIDs.length > i + 50) ? (artistIDs.length - i) : i + 50
+      let part = artistIDs.slice(i, i + 50)
+      console.log(part[0])
+      axios.get("https://api.spotify.com/v1/artists", {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        params: {
+          ids: part.join(',')
+        }
+      }).then(resp => {
+        console.log(artists.length)
+        artists.push(...resp.data.artists)
+        if (artistIDs.length == artists.length) {
+          resolve(artists)
+        }
+      }).catch(err => {
+        reject(err)
+      })
+    }
+
+  })
+}
+module.exports = { session, checkAuth, restructure, generateNodesAndLinks, getAllArtists, getTracks, getArtists }

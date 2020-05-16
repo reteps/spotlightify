@@ -1,14 +1,21 @@
 <template>
-  <div>
 
+  <div>
+  <v-app>
     <MenuBar/>
     <nuxt />
+    </v-app>
   </div>
 </template>
 <script>
 import MenuBar from '@/components/MenuBar.vue'
 export default {
-  components: {MenuBar}
+  components: {MenuBar},
+  errorCaptured (err, vm, info) {
+    console.log(`err:${err}`)
+    vm.$toast.info(err.message)
+    return false
+  },
 }
 </script>
 <style>

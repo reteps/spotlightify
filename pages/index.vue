@@ -1,6 +1,8 @@
 <template>
   <div class="container">
-  <a href="/api/auth">Actual login</a>
+  <div class="login-btn">
+    <a href="/api/auth"><span>Login With </span> <img class="spotify-img" src="/spotify_icon.png"></a>
+  </div>
   </div>
 </template>
 
@@ -24,35 +26,37 @@ export default Vue.extend({
 })
 </script>
 
-<style>
-.container {
-  margin: 0 auto;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-
-.title {
-  font-family: 'Quicksand', 'Source Sans Pro', -apple-system, BlinkMacSystemFont,
-    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  display: block;
-  font-weight: 300;
-  font-size: 100px;
-  color: #35495e;
-  letter-spacing: 1px;
-}
-
-.subtitle {
-  font-weight: 300;
-  font-size: 42px;
-  color: #526488;
-  word-spacing: 5px;
-  padding-bottom: 15px;
-}
-
-.links {
-  padding-top: 15px;
-}
+<style lang="sass">
+.container
+  margin: 0 auto
+  min-height: 100vh
+  display: flex
+  justify-content: center
+  align-items: center
+  text-align: center
+  .spotify-img
+    height: 2em
+    width: auto
+  a
+    text-decoration: none
+    font-size: 3em
+    span
+      padding-right: 10px
+    color: black
+    display: flex
+    align-items: center
+    border: 5px solid black
+    padding: .25em
+    border-radius: 20px
+    box-shadow: 5px 10px
+    transition: 1s
+  a:hover
+    box-shadow: 0px 0px
+    transform: translate(5px, 10px)
+.menu
+  a
+    pointer-events: none
+    cursor: default
+    border-color: grey
+    color: grey
 </style>

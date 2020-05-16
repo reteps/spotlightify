@@ -1,6 +1,20 @@
 <template>
-<div>
-
+<div class="app">
+  <FriendLogin v-if='friendRefresh==null'@tokens='onTokens'></FriendLogin>
+  <div v-else class="container">
+    <div> Now select which playlists you would like to compare</div>
+    <v-select
+          :items="friendPlaylistNames"
+          label="Friend Playlist"
+        ></v-select>
+    <v-select
+          :items="myPlaylistNames"
+          label="My Playlist"
+        ></v-select>
+    </div>
+</div>
+</div>
+<!--
 Welcome to my super cool app guys!
 <button v-on:click="testSongs">Test some stuff</button>
 <a href="/logout">Logout</a>
@@ -13,26 +27,74 @@ Welcome to my super cool app guys!
 
 <button v-on:click="buildGraph">Build the graph</button>
 <div id="viz"></div>
+-->
 </div>
 </template>
+
+<style lang="sass">
+  .container
+    margin: 0 auto
+    min-height: 80vh
+    display: flex
+    flex-direction: column
+</style>
 <script>
 const axios = require('axios')
 const subgenre = require('subgenre.js')
 import { generateNodesAndLinks, getAllArtists } from '../api/lib.js'
 import * as d3 from  'd3'
+import FriendLogin from '@/components/FriendLogin.vue'
 export default {
+  components: { FriendLogin },
+  name: 'App',
   data() {
     return {
-      response: '',
-      message: '',
+      //response: '',
+      secretToken: null,
       nodes: {},
       links: {},
       artistIDs: [],
-      artists: []
+      artists: [],
+      addedFriend: false,
+      loadingFriend: false,
+      refreshToken: '',
+      friendRefresh: null,
+      friendAccess: null,
+      friendPlaylists: null,
+      myPlaylists: null
+    }
+  },
 
+  computed: {
+    friendPlaylistNames() {
+      if (!this.friendPlaylists) { return [] }
+      return ['Liked Songs'].concat(this.friendPlaylists.items.map(item => item.name))
+    },
+    myPlaylistNames() {
+      if (!this.myPlaylists) { return [] }
+      return ['Liked Songs'].concat(this.myPlaylists.items.map(item => item.name))
     }
   },
   methods: {
+    loadPlaylists() {
+      let vm = this;
+      axios.get(`/api/playlists/${this.friendAccess}`).then(res => {
+        console.log(res.data)
+        vm.friendPlaylists = res.data
+        return axios.get('/api/playlists')
+      }).then(res => {
+        console.log(res.data)
+        vm.myPlaylists = res.data
+      })
+    },
+    onTokens: function (refresh, access) {
+      console.log('Received tokens.')
+      this.friendRefresh = refresh
+      this.friendAccess = access
+      this.loadPlaylists()
+
+    },
+
     testSongs: function(e) {
       console.log('Running')
       var vm = this
@@ -163,16 +225,9 @@ export default {
       })
 
     },
-    getToken: function(e) {
-      axios.get('/api/me').then(res => {
-        console.log(res)
-        this.response = res.data.message
-      }).catch(err => {
-        console.log(err)
-      })
-    },
+
     testRefresh: function(e) {
-      axios.get(`/api/refresh/${this.message}`).then(res => {
+      axios.get(`/api/refresh/${this.secretToken}`).then(res => {
         return axios.get(`/api/songs/${res.data.access_token}`)
 
 

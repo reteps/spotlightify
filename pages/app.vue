@@ -1,36 +1,32 @@
 <template>
   <div class="app">
-    <FriendLogin v-if='friendRefresh==null' @tokens='onTokens'></FriendLogin>
-    <div v-else class="container">
-      <div> Now select which playlists you would like to compare</div>
-      <div>
-        <v-select v-model="selectedFriendPlaylist" :items="friendPlaylistNames" label="Friend Playlist"></v-select>
-        <v-select v-model="selectedMyPlaylist" :items="myPlaylistNames" label="My Playlist"></v-select>
-        <v-btn :disabled="selectedFriendPlaylist == null || selectedMyPlaylist == null" color="primary" @click="retrievePlaylistsAndArtists">Lets go!</v-btn>
-        <v-progress-circular :value="songLoadProgress * 25" v-if="!songsLoaded && startedLoad"></v-progress-circular>
-      </div>
+    <v-container>
+      <FriendLogin v-if='friendRefresh==null' @tokens='onTokens'></FriendLogin>
+      <MusicLoader :friendAccess='friendAccess' :friendRefresh='friendRefresh' v-if='friendRefresh!=null && !songsLoaded' @songs='onSongs'></MusicLoader>
       <div v-if="songsLoaded">
-        <div> The final step! Generate the chart </div>
-        <v-btn color="primary" @click="generateChart">Lets go!</v-btn>
+        <v-btn-toggle v-model='listType'>
+
+        <!--<v-btn color="primary"> Generate Visual </v-btn>-->
+        <v-btn color="primary" value="match">Songs in common</v-btn>
+        <v-btn color="primary" value="album">Songs with a common album</v-btn>
+        <v-btn color="primary" value="albumNew">New Songs with a common album</v-btn>
+        <v-btn color="primary" value="artist">Songs in common artist</v-btn>
+        <v-btn color="primary" value="artistNew">New Songs with a common artist</v-btn>
+        </v-btn-toggle>
+        <v-list>
+          <v-list-item v-for="song in sharedSongs" :key="song.track.id">
+            <v-list-item-avatar tile><v-img :src="song.track.album.images[2].url"></v-img> </v-list-item-avatar>
+            <v-list-item-content>
+              <v-list-item-title v-text="song.track.name"></v-list-item-title>
+              <v-list-item-subtitle v-text="`${song.track.artists[0].name} - ${song.track.album.name}`"></v-list-item-subtitle>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
         <div id="viz">
         </div>
       </div>
-    </div>
+    </v-container>
   </div>
-  <!--
-Welcome to my super cool app guys!
-<button v-on:click="testSongs">Test some stuff</button>
-<a href="/logout">Logout</a>
-<button v-on:click="getToken">Get your token</button>
-<div> {{ response }} </div>
-<input v-model="message">
-<button v-on:click="testRefresh">Build the ultra cool visual</button>
-<button v-on:click="loadTestingDataset"> Load  Testing  Dataset </button>
-<button v-on:click="sendArtists">Load Artists</button>
-
-<button v-on:click="buildGraph">Build the graph</button>
-<div id="viz"></div>
--->
 </template>
 
 <style lang="sass">
@@ -46,123 +42,93 @@ Welcome to my super cool app guys!
   const subgenre = require('subgenre.js')
   var _ = require('lodash');
   import {
-    generateNodesAndLinks,
-    flattenSongArtists
+    generateNodesAndLinks
   } from '../api/lib.js'
   import * as d3 from 'd3'
   import FriendLogin from '@/components/FriendLogin.vue'
+  import MusicLoader from '@/components/MusicLoader.vue'
   export default {
     components: {
-      FriendLogin
+      FriendLogin,
+      MusicLoader
     },
     name: 'App',
     data() {
       return {
-        loadingSongs: false,
-        friendSongs: [],
-        mySongs: [],
+
         friendRefresh: null,
         friendAccess: null,
-        friendPlaylists: null,
-        myPlaylists: null,
-        selectedFriendPlaylist: null,
-        selectedMyPlaylist: null,
-        songLoadProgress: 0,
-        startedLoad: false,
+
+        songsLoaded: false,
         myArtists: [],
         friendArtists: [],
+        mySongs: [],
+        friendSongs: [],
+        listType: '',
+
         nodes: null,
         links: null
       }
     },
-
     computed: {
-      friendPlaylistNames() {
-        if (!this.friendPlaylists) {
+      sharedSongs() {
+        console.log('Recomputing with list type', this.listType)
+        if (this.listType == 'match') {
+          return _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.id)
+        } else if (this.listType == 'album') {
+          return _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.album.id)
+        } else if (this.listType == 'albumNew') {
+          return _.differenceBy(_.intersectionBy(this.friendSongs, this.mySongs, s => s.track.album.id), this.mySongs, s=>s.track.id)
+        } else if (this.listType == 'artist') {
+          return _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.artists[0].id)
+        } else if (this.listType == 'artistNew') {
+          return _.differenceBy(_.intersectionBy(this.friendSongs, this.mySongs, s => s.track.artists[0].id), s=>s.track.id)
+        } else {
           return []
         }
-        return ['Liked Songs'].concat(this.friendPlaylists.map(item => item.name))
-      },
-      myPlaylistNames() {
-        if (!this.myPlaylists) {
-          return []
-        }
-        return ['Liked Songs'].concat(this.myPlaylists.map(item => item.name))
-      },
-      songsLoaded() {
-        return this.songLoadProgress == 4
       }
     },
     methods: {
-      retrievePlaylistsAndArtists() {
-        let vm = this
-        this.startedLoad = true
-        this.retrievePlaylist((this.friendPlaylists.find(o => o.name == vm.selectedFriendPlaylist) || {id:'Liked Songs'}).id, this.friendAccess).then(songs => {
-          vm.friendSongs = songs
-          vm.songLoadProgress += 1
-          return songs
-        }).then(songs => {
-          return vm.loadArtists(songs)
-        }).then(artists => {
-          vm.friendArtists = artists
-          vm.songLoadProgress += 1
-        })
-
-        this.retrievePlaylist((this.myPlaylists.find(o => o.name == vm.selectedMyPlaylist) || {id:'Liked Songs'}).id).then(songs => {
-          vm.mySongs = songs
-          vm.songLoadProgress += 1
-          return songs
-        }).then(songs => {
-          return vm.loadArtists(songs)
-        }).then(artists => {
-          vm.myArtists = artists
-          vm.songLoadProgress += 1
-        })
-      },
-      retrievePlaylist(id, token='') {
-        let func = (id == 'Liked Songs') ? this.loadSongs : this.loadPlaylist
-        return func(id, token)
-      },
-      loadSongs: function(_, token) {
-        return axios.get(`/api/songs/${token}`).then(res => {
-          return res.data
-        })
-      },
-      loadPlaylist: function(id, token) {
-        return axios.get(`/api/playlist/${id}/${token}`).then(res => {
-          return res.data
-        })
-      },
-      loadPlaylists() {
-        let vm = this;
-        axios.get(`/api/playlists/${this.friendAccess}`).then(res => {
-          vm.friendPlaylists = res.data.items
-          return axios.get('/api/playlists')
-        }).then(res => {
-          console.log(res.data)
-          vm.myPlaylists = res.data.items
-        })
-      },
       onTokens: function (refresh, access) {
         console.log('Received tokens.')
         this.friendRefresh = refresh
         this.friendAccess = access
-        this.loadPlaylists()
 
       },
-      loadArtists(dataset) {
+      onSongs: function (myArtists, mySongs, friendArtists, friendSongs) {
+        this.songsLoaded = true
+        this.myArtists = myArtists
+        this.mySongs = mySongs
+        this.friendArtists = friendArtists
+        this.friendSongs = friendSongs
+        console.log('Received songs')
 
-        return axios.post('/api/artists', flattenSongArtists(dataset))
-          .then(res => {
-            console.log('Received reply')
-            return res.data
-          }).catch(err => {
-            console.log(`ERR: ${err}`)
-          })
       },
+
       generateChart() {
         // Mark songs based on owner
-
+        this.mySongs.map(song => {
+          song.owner = true
+          return song
+        })
+        this.myArtists.map(artist => {
+          artist.owner = true
+          return artist
+        })
+        // Then merge songs
+        // unionBy removes duplicates
+        let mergedSongs = _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.id)
+        let mergedArtists = _.intersectionBy(this.myArtists, this.friendArtists, s => s.id)
+        console.log(mergedSongs)
+        console.log(mergedArtists)
+        const {
+          nodes,
+          links
+        } = generateNodesAndLinks(mergedSongs, mergedArtists)
+        //this.nodes = nodes
+        //this.links = links
+        console.log('Dataset  loaded')
+        this.buildGraph(nodes, links)
       },
       buildGraph(nodes, links) {
         const drag = (simulation) => {

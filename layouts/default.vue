@@ -3,7 +3,9 @@
   <div>
   <v-app>
     <MenuBar/>
-    <nuxt />
+    <v-content>
+      <nuxt />
+    </v-content>
     </v-app>
   </div>
 </template>
@@ -16,6 +18,7 @@ export default {
     vm.$toast.info('ERR' + err.message)
     return false
   },
+  name: 'default'
 }
 </script>
 <style>

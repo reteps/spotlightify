@@ -1,21 +1,26 @@
 <template>
-  <div class="container">
 
-  <div class="friend-login">
-    <div> Congratulations 🎉! You are now logged in. 🎉 </div>
-    <div> In order to access your friend's music, we need their secret token. Click the button to see your token.</div>
-    <div v-if="refreshToken==''">
-      <v-btn v-on:click="getToken"> Reveal token </v-btn>
-    </div>
-    <v-textarea outlined small label="Refresh Token" v-model="refreshToken" :value="refreshToken" v-else></v-textarea>
+  <v-card>
+    <v-card-text>
+    <h2 class='text--primary'> Congratulations 🎉! You are now logged in. 🎉 </h2>
+    <div class='text--primary'> In order to access your friend's music, we need their secret token. Click the button to view your token and share it with a friend.</div>
+    </v-card-text>
     <div> Enter your friend's token below: </div>
-    <v-textarea solo v-model="secretToken" placeholder="AQCc2h_GJ2Q4NpOI-T_NryAmyf_EL4pWTjrZbp4VWoViZbE2fBTOEmBUD-J_yJnm..."></v-textarea>
-    <div>
-      <v-btn large color="primary" @click="submitSecretToken"> Lets go! </v-btn>
+    <v-textarea :auto-grow="true" solo v-model="secretToken" placeholder="AQCc2h_GJ2Q4NpOI-T_NryAmyf_EL4pWTjrZbp4VWoViZbE2fBTOEmBUD-J_yJnm..."></v-textarea>
+    <v-card-actions>
+      <v-btn class="mr-2" color="primary" :disabled='!secretToken' @click="submitSecretToken"> Lets go! </v-btn>
       <v-progress-circular indeterminate v-if="loadingFriend"></v-progress-circular>
-    </div>
-  </div>
-  </div>
+      <v-spacer></v-spacer>
+      <v-btn @click="getToken">
+        Reveal Token <v-icon>{{ show ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+      </v-btn>
+    </v-card-actions>
+        <v-expand-transition>
+      <div v-show="show">
+        <v-textarea :auto-grow="true" :value="refreshToken"></v-textarea>
+      </div>
+    </v-expand-transition>
+  </v-card>
 </template>
 <script>
 const axios = require('axios')
@@ -27,11 +32,17 @@ export default {
       secretToken: null,
       loadingFriend: false,
       refreshToken: '',
+      secretToken: '',
+      show: false
 
     }
   },
   methods: {
-    getToken: function(e) {
+    getToken() {
+      this.show = !this.show
+      if (!this.show || this.refreshToken) {
+        return
+      }
       axios.get('/api/me').then(res => {
         let response = res.data.message
         this.refreshToken = response.replace(/^\s+|\s+$/g, '')
@@ -40,6 +51,7 @@ export default {
       })
     },
     submitSecretToken: function() {
+      this.show = false
       let vm = this;
       vm.loadingFriend = true
       if (!this.secretToken) {
@@ -63,24 +75,3 @@ export default {
   }
 }
 </script>
-<style lang="sass">
-  .friend-login
-    border: 1px solid black
-    width: 33%
-    border-radius: 20px
-    box-shadow: 5px 10px
-    display: flex
-    height: auto
-    flex-direction: column
-    text-align: center
-    justify-content: center
-    align-content: center
-    padding: 1em
-  .container
-    margin: 0 auto
-    min-height: 80vh
-    display: flex
-    justify-content: center
-    align-items: center
-    text-align: center
-</style>

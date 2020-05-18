@@ -3,6 +3,7 @@ const expressSession = require('express-session')
 const subgenre = require('subgenre.js')
 const axios = require('axios')
 const passport = require('passport')
+var _ = require('lodash');
 
 const checkAuth = (BASEURL) => {
   return (req, res, next) => {
@@ -39,9 +40,8 @@ const NODE_TYPES = Object.freeze({
   SONG: 5
 })
 const flattenSongArtists = (songs) => {
-  console.log(songs)
   let artists = songs.flatMap(song => song.track.artists).map(a => a.id)
-  return artists.filter((artist, index, arr) => artists.indexOf(artist) === index)
+  return artists.filter((artist, index, arr) => artists.indexOf(artist) === index && artist != null)
 }
 const addGenre = (artists) => {
   console.log(`adding genres for artists.`)
@@ -77,7 +77,6 @@ const generateNodesAndLinks = (songs, artists) => {
     artistsWithGenres,
     genreMap
   } = addGenre(artists)
-  console.log('genres added', genreMap)
   console.log(artistsWithGenres.length)
   console.log(songs.length)
   let nodes = []
@@ -191,18 +190,14 @@ function getTracks(url, auth, currentTracks = []) {
 function getArtists(token, artistIDs) {
   return new Promise((resolve, reject) => {
     let artists = []
-
-    console.log('Backend got  request')
-    for (let i = 0; i < artistIDs.length; i += 50) {
-      let end = (artistIDs.length > i + 50) ? (artistIDs.length - i) : i + 50
-      let part = artistIDs.slice(i, i + 50)
-      console.log(part[0])
+    let chunks = _.chunk(artistIDs, 50)
+    for (let chunk of chunks) {
       axios.get("https://api.spotify.com/v1/artists", {
         headers: {
           'Authorization': `Bearer ${token}`
         },
         params: {
-          ids: part.join(',')
+          ids: _.join(chunk, ',')
         }
       }).then(resp => {
         console.log(artists.length)
@@ -211,6 +206,7 @@ function getArtists(token, artistIDs) {
           resolve(artists)
         }
       }).catch(err => {
+        console.log('There was an error:/', err)
         reject(err)
       })
     }

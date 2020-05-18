@@ -31,6 +31,7 @@
     "vuetify-toast-snackbar": "^0.6.1"
   },
   "devDependencies": {
+    "@fortawesome/fontawesome-free": "^5.13.0",
     "@nuxt/typescript-build": "^0.6.0",
     "@nuxtjs/vuetify": "^1.11.2",
     "node-sass": "^4.14.0",

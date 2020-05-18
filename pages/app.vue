@@ -20,6 +20,16 @@
               <v-list-item-title v-text="song.track.name"></v-list-item-title>
               <v-list-item-subtitle v-text="`${song.track.artists[0].name} - ${song.track.album.name}`"></v-list-item-subtitle>
             </v-list-item-content>
+            <v-list-item-action>
+              <v-btn target="_blank" icon :href="song.track.external_urls.spotify">
+                <v-icon color="green">fab fa-spotify</v-icon>
+              </v-btn>
+            </v-list-item-action>
+            <v-list-item-action>
+              <v-btn icon @click="play(song.track.preview_url)">
+                <v-icon>{{ currentPlayback == song.track.preview_url ? 'fa-pause' : 'fa-play'}}</v-icon>
+              </v-btn>
+            </v-list-item-action>
           </v-list-item>
         </v-list>
         <div id="viz">
@@ -67,7 +77,9 @@
         listType: '',
 
         nodes: null,
-        links: null
+        links: null,
+        audioPlayer: null,
+        currentPlayback: null
       }
     },
     computed: {
@@ -88,7 +100,21 @@
         }
       }
     },
+    mounted() {
+      this.audioPlayer = new Audio();
+    },
     methods: {
+      play(url) {
+        if (this.currentPlayback == url) {
+          this.audioPlayer.pause()
+          this.currentPlayback = null
+          return
+        }
+        this.currentPlayback = url
+        this.audioPlayer.src = url
+        this.audioPlayer.load()
+        this.audioPlayer.play()
+      },
       onTokens: function (refresh, access) {
         console.log('Received tokens.')
         this.friendRefresh = refresh

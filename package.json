@@ -20,11 +20,12 @@
     "express": "^4.16.4",
     "express-session": "^1.17.1",
     "fs": "0.0.1-security",
+    "lodash": "^4.17.15",
     "nuxt": "^2.12.2",
     "passport": "^0.4.1",
     "passport-spotify": "^1.1.0",
     "querystring": "^0.2.0",
-    "subgenre.js": "^1.0.2",
+    "subgenre.js": "^1.0.3",
     "vue-snack": "^0.1.4",
     "vuetify": "^2.2.28",
     "vuetify-toast-snackbar": "^0.6.1"

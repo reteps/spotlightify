@@ -24,39 +24,6 @@ const session = expressSession({
   saveUninitialized: true,
 })
 
-const restructure = (songs) => {
-  return songs.map(song => {
-    // Pull everything out
-    for (let [key, value] of Object.entries(song.track)) {
-      if (key === 'external_urls') {
-        value = value.spotify
-        key = 'link'
-      }
-      song[key] = value
-    }
-    for (let artist of song.artists) {
-      artist.link = artist.external_urls.spotify
-      delete artist.external_urls
-    }
-    delete song.available_markets
-    delete song.disc_number
-    delete song.is_local
-    delete song.external_ids
-    delete song.duration_ms
-    delete song.explicit
-    delete song.track_number
-    delete song.album.artists
-    delete song.album.release_date
-    delete song.album.release_date_precision
-    delete song.album.total_tracks
-    delete song.album.available_markets
-    song.album.link = song.album.external_urls.spotify
-    delete song.album.external_urls
-    delete song.track
-    return song
-  })
-}
-
 const CONNECTION_TYPES = Object.freeze({
   USER_TO_GENRE: 50,
   GENRE_TO_ARTIST: 30,
@@ -71,12 +38,13 @@ const NODE_TYPES = Object.freeze({
   ALBUM: 4,
   SONG: 5
 })
-const getAllArtists = (songs) => {
-  let artists = songs.flatMap(song => song.artists).map(a => a.id)
+const flattenSongArtists = (songs) => {
+  console.log(songs)
+  let artists = songs.flatMap(song => song.track.artists).map(a => a.id)
   return artists.filter((artist, index, arr) => artists.indexOf(artist) === index)
 }
 const addGenre = (artists) => {
-  console.log('adding genre', artists[0])
+  console.log(`adding genres for artists.`)
   let artistsWithGenres = artists
     .map(a => {
       a.tlgs = a.genres.map(g => subgenre.topLevelGenre(g))
@@ -84,22 +52,21 @@ const addGenre = (artists) => {
     })
     .map(a => {
       a.genre = (a.tlgs.length == 0) ? 'other' : subgenre.mostPopularGenre(a.tlgs)
-      delete a.tlgs
-      delete a.genres
       return a
     })
+  console.log('Success')
   let genres = artistsWithGenres.map(a => a.genre)
   let uniq = [...new Set(genres)].reduce((dict, g) => {
     dict[g] = genres.filter(v => v == g).length
     return dict
   }, {})
+  uniq.other = 999 // Make sure the 'other genre' does not disappear either
   artistsWithGenres.map(a => {
-    if (a.genre == 'other' || uniq[a.genre] < 10) {
+    if (uniq[a.genre] < 10) {
       a.genre = 'other'
     }
     return a
   })
-  uniq.other = 999
   return {
     artistsWithGenres: artistsWithGenres,
     genreMap: uniq
@@ -153,37 +120,36 @@ const generateNodesAndLinks = (songs, artists) => {
   for (let song of songs) {
     // Create all nodes
     let songNode = {
-      name: song.name,
-      link: song.link,
+      name: song.track.name,
+      link: song.track.external_urls.spotify,
       type: NODE_TYPES.SONG,
-      id: song.id
+      id: song.track.id
     }
     let albumNode = {
-      name: song.album.name,
-      link: song.album.link,
+      name: song.track.album.name,
+      link: song.track.album.external_urls.spotify,
       type: NODE_TYPES.ALBUM,
-      id: song.album.id
+      id: song.track.album.id
     }
-    if (visitedAlbums.indexOf(albumNode.id) === -1) {
+    if (visitedAlbums.indexOf(song.track.album.id) === -1) {
       nodes.push(albumNode)
-      song.artists.slice(0, 1).forEach(artist => {
+      song.track.artists.slice(0, 1).forEach(artist => {
         links.push({
           source: artist.id,
-          target: albumNode.id,
+          target: song.track.album.id,
           type: CONNECTION_TYPES.ARTIST_TO_ALBUM
         })
       })
-      visitedAlbums.push(albumNode.id)
+      visitedAlbums.push(song.track.album.id)
     }
     nodes.push(songNode)
-    // Create connection between album and each artist
-    // Create connection between all artists and user
+    // removed: Create connection between album and each artist
+    // removed: Create connection between all artists and user
 
     // Create connection between album and song
-    console.log(albumNode.id, songNode.id)
     links.push({
-      source: albumNode.id,
-      target: songNode.id,
+      source: song.track.album.id,
+      target: song.track.id,
       type: CONNECTION_TYPES.ALBUM_TO_SONG
     })
 
@@ -254,9 +220,8 @@ function getArtists(token, artistIDs) {
 module.exports = {
   session,
   checkAuth,
-  restructure,
   generateNodesAndLinks,
-  getAllArtists,
+  flattenSongArtists,
   getTracks,
   getArtists
 }

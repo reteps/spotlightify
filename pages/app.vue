@@ -6,8 +6,14 @@
       <div>
         <v-select v-model="selectedFriendPlaylist" :items="friendPlaylistNames" label="Friend Playlist"></v-select>
         <v-select v-model="selectedMyPlaylist" :items="myPlaylistNames" label="My Playlist"></v-select>
-        <v-btn :disabled="selectedFriendPlaylist == null || selectedMyPlaylist == null" color="primary" @click="retrievePlaylists">Lets go!</v-btn>
-        <v-progress-circular indeterminate v-if="loadingSongs"></v-progress-circular>
+        <v-btn :disabled="selectedFriendPlaylist == null || selectedMyPlaylist == null" color="primary" @click="retrievePlaylistsAndArtists">Lets go!</v-btn>
+        <v-progress-circular :value="songLoadProgress * 25" v-if="!songsLoaded && startedLoad"></v-progress-circular>
+      </div>
+      <div v-if="songsLoaded">
+        <div> The final step! Generate the chart </div>
+        <v-btn color="primary" @click="generateChart">Lets go!</v-btn>
+        <div id="viz">
+        </div>
       </div>
     </div>
   </div>
@@ -38,9 +44,10 @@ Welcome to my super cool app guys!
 <script>
   const axios = require('axios')
   const subgenre = require('subgenre.js')
+  var _ = require('lodash');
   import {
     generateNodesAndLinks,
-    getAllArtists
+    flattenSongArtists
   } from '../api/lib.js'
   import * as d3 from 'd3'
   import FriendLogin from '@/components/FriendLogin.vue'
@@ -59,7 +66,13 @@ Welcome to my super cool app guys!
         friendPlaylists: null,
         myPlaylists: null,
         selectedFriendPlaylist: null,
-        selectedMyPlaylist: null
+        selectedMyPlaylist: null,
+        songLoadProgress: 0,
+        startedLoad: false,
+        myArtists: [],
+        friendArtists: [],
+        nodes: null,
+        links: null
       }
     },
 
@@ -75,20 +88,35 @@ Welcome to my super cool app guys!
           return []
         }
         return ['Liked Songs'].concat(this.myPlaylists.map(item => item.name))
+      },
+      songsLoaded() {
+        return this.songLoadProgress == 4
       }
     },
     methods: {
-      retrievePlaylists() {
+      retrievePlaylistsAndArtists() {
         let vm = this
-        this.loadingSongs = true
+        this.startedLoad = true
         this.retrievePlaylist((this.friendPlaylists.find(o => o.name == vm.selectedFriendPlaylist) || {id:'Liked Songs'}).id, this.friendAccess).then(songs => {
-          this.loadingSongs = false
           vm.friendSongs = songs
+          vm.songLoadProgress += 1
+          return songs
+        }).then(songs => {
+          return vm.loadArtists(songs)
+        }).then(artists => {
+          vm.friendArtists = artists
+          vm.songLoadProgress += 1
         })
 
         this.retrievePlaylist((this.myPlaylists.find(o => o.name == vm.selectedMyPlaylist) || {id:'Liked Songs'}).id).then(songs => {
-          this.loadingSongs = false
           vm.mySongs = songs
+          vm.songLoadProgress += 1
+          return songs
+        }).then(songs => {
+          return vm.loadArtists(songs)
+        }).then(artists => {
+          vm.myArtists = artists
+          vm.songLoadProgress += 1
         })
       },
       retrievePlaylist(id, token='') {
@@ -108,7 +136,6 @@ Welcome to my super cool app guys!
       loadPlaylists() {
         let vm = this;
         axios.get(`/api/playlists/${this.friendAccess}`).then(res => {
-          console.log(res.data)
           vm.friendPlaylists = res.data.items
           return axios.get('/api/playlists')
         }).then(res => {
@@ -123,55 +150,21 @@ Welcome to my super cool app guys!
         this.loadPlaylists()
 
       },
+      loadArtists(dataset) {
 
-      testSongs: function (e) {
-        console.log('Running')
-        var vm = this
-        axios.get('/api/songs').then(res => {
-          console.log(res.data.length)
-          return generateNodesAndLinks(res.data)
-        }).then(dataset => {
-          vm.nodes = dataset.nodes
-          vm.links = dataset.links
-        }).catch(err => {
-          console.log(err)
-        })
-      },
-      sendArtists: function (e) {
-        const dataset = require('../testing.json')
-
-        return axios.post('/api/artists', getAllArtists(dataset))
+        return axios.post('/api/artists', flattenSongArtists(dataset))
           .then(res => {
             console.log('Received reply')
-            console.log(res.data)
-            this.artists = res.data
-
-            // Now we have an appropriate list of genres, recategorize artist
-            //console.log(subgenre.mostPopularGenre(genres))
-            //console.log(subgenre.leastPopularGenre(genres))
+            return res.data
           }).catch(err => {
             console.log(`ERR: ${err}`)
           })
       },
-      loadTestingDataset: function (e) {
-        if (this.artists.length == 0) {
-          console.log('loadartisstsfirst')
-          return
-        }
-        const dataset = require('../testing.json')
-        const {
-          nodes,
-          links
-        } = generateNodesAndLinks(dataset, this.artists)
-        this.nodes = nodes
-        this.links = links
-        console.log('Dataset  loaded')
+      generateChart() {
+        // Mark songs based on owner
+
       },
-      buildGraph: function (e) {
-        if (this.nodes.length === 0 || this.links.length === 0) {
-          console.log('Cannot  build  graph, not filled in yet')
-          return
-        }
+      buildGraph(nodes, links) {
         const drag = (simulation) => {
           function dragstarted(d) {
             //if (!d3.event.active) simulation.alphaTarget(0.3).restart()
@@ -207,18 +200,11 @@ Welcome to my super cool app guys!
           .attr('height', h)
         // Force simulation
         var linkNodes = [];
-        let vm = this;
-        console.log(vm.links)
-        // let flatNodes = vm.nodes.reduce((a,node) => {
-        //   a[node.id] = node
-        //   return a
-        // },{})
-        // console.log(flatNodes)
 
-        let sim = d3.forceSimulation(this.nodes)
+        let sim = d3.forceSimulation(nodes)
           .force("charge", d3.forceManyBody())
           .force("center", d3.forceCenter(w / 2, h / 2)) // Center  around  middle of graph
-          .force("link", d3.forceLink(this.links).id(d => d.id).distance(d => d.type).iterations(5))
+          .force("link", d3.forceLink(links).id(d => d.id).distance(d => d.type).iterations(5))
           .force("x", d3.forceX())
           .force("y", d3.forceY())
 
@@ -228,7 +214,7 @@ Welcome to my super cool app guys!
           .attr('stroke', '#ccc') // Everything in the group is lightgrey
           .attr('stroke-width', '3px')
           .selectAll('line')
-          .data(this.links) // Alternative  to enter,append, is now dynamic
+          .data(links) // Alternative  to enter,append, is now dynamic
           .join('line')
         // Now for some cool colors
         const colorScale = d3.scaleOrdinal(d3.schemeSet1.slice(0, 5))
@@ -239,7 +225,7 @@ Welcome to my super cool app guys!
           .attr('stroke', '#fff')
           .attr('stroke-width', '1.5px')
           .selectAll('circle')
-          .data(this.nodes)
+          .data(nodes)
           .join('circle') // enter/append
           .attr("r", 5)
           .attr("fill", d => colorScale(d.type))

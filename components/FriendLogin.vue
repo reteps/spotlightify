@@ -65,7 +65,8 @@ export default {
         vm.loadingFriend = false
         vm.addedFriend = true
         console.log(vm.secretToken, token)
-        vm.$emit('tokens', vm.secretToken, token)
+        vm.$store.commit('setFriendTokens', {access: token, refresh: vm.secretToken })
+        vm.$store.commit('tokensLoaded', true)
       })
       .catch(err => {
         vm.loadingFriend = false

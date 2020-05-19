@@ -11,12 +11,10 @@
 </template>
 <script>
 const axios = require('axios')
+import {mapState} from 'vuex';
 export default {
   name: 'MusicLoader',
-  props: {
-    friendAccess: {type: String, required: true},
-    friendRefresh: {type: String, required: true}
-  },
+
   data: function()  {
     return {
       songLoadProgress: -1,
@@ -41,6 +39,9 @@ export default {
         }
         return ['Liked Songs'].concat(this.myPlaylists.map(item => item.name))
       },
+      ...mapState({
+        friendAccess: state => state.friend.access
+      })
   },
   created() {
     this.loadPlaylists()
@@ -51,28 +52,28 @@ export default {
         this.startedLoad = true
         this.songLoadProgress = 0
         this.retrievePlaylist((this.friendPlaylists.find(o => o.name == vm.selectedFriendPlaylist) || {id:'Liked Songs'}).id, this.friendAccess).then(songs => {
-          vm.friendSongs = songs
+          vm.$store.commit('setSongs', {user: 'friend', songs})
           vm.songLoadProgress += 1
           return songs
         }).then(songs => {
           console.log(`Received ${songs.length}`)
           return vm.loadArtists(songs)
         }).then(artists => {
-          vm.friendArtists = artists
+          vm.$store.commit('setArtists', {user: 'friend', artists})
           vm.songLoadProgress += 1
         })
         .then(() => vm.retrievePlaylist((vm.myPlaylists.find(o => o.name == vm.selectedMyPlaylist) || {id:'Liked Songs'}).id)) // Now load my songs
         .then(songs => {
-          vm.mySongs = songs
+          vm.$store.commit('setSongs', {user: 'self', songs})
           vm.songLoadProgress += 1
           return songs
         }).then(songs => {
           console.log(`Received ${songs.length} Songs`)
           return vm.loadArtists(songs)
         }).then(artists => {
-          vm.myArtists = artists
+          vm.$store.commit('setArtists', {user: 'self', artists})
+          vm.$store.commit('musicLoaded', true)
           vm.songLoadProgress += 1
-          vm.$emit('songs', vm.myArtists, vm.mySongs, vm.friendArtists, vm.friendSongs)
         })
       },
       loadArtists(dataset) {

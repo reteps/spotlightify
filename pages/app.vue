@@ -1,9 +1,9 @@
 <template>
   <div class="app">
     <v-container>
-      <FriendLogin v-if='friendRefresh==null' @tokens='onTokens'></FriendLogin>
-      <MusicLoader :friendAccess='friendAccess' :friendRefresh='friendRefresh' v-if='friendRefresh!=null && !songsLoaded' @songs='onSongs'></MusicLoader>
-      <div v-if="songsLoaded">
+      <FriendLogin v-if='!tokensLoaded'></FriendLogin>
+      <MusicLoader v-if='tokensLoaded && !musicLoaded'></MusicLoader>
+      <div v-if="musicLoaded">
         <v-row>
         <v-col>
         <!-- sus stuff https://stackoverflow.com/questions/55188478/meaning-of-v-slotactivator-on/55194478 -->
@@ -60,6 +60,7 @@
     generateNodesAndLinks
   } from '../api/lib.js'
   import * as d3 from 'd3'
+  import {mapState} from 'vuex';
   import FriendLogin from '@/components/FriendLogin.vue'
   import MusicLoader from '@/components/MusicLoader.vue'
   import InfoButton from '@/components/InfoButton.vue'
@@ -77,10 +78,6 @@
         friendAccess: null,
 
         songsLoaded: false,
-        myArtists: [],
-        friendArtists: [],
-        mySongs: [],
-        friendSongs: [],
         listType: '',
 
         nodes: null,
@@ -144,6 +141,16 @@
         }
         return currentSort.sort()
       },
+      ...mapState([
+        'musicLoaded',
+        'tokensLoaded'
+      ]),
+      ...mapState({
+        mySongs: state => state.self.songs,
+        friendSongs: state => state.friend.songs,
+        myArtists: state => state.self.artists,
+        friendArtists: state => state.friend.artists,
+      })
     },
     mounted() {
       this.audioPlayer = new Audio();
@@ -175,22 +182,6 @@
         this.audioPlayer.load()
         this.audioPlayer.play()
       },
-      onTokens: function (refresh, access) {
-        console.log('Received tokens.')
-        this.friendRefresh = refresh
-        this.friendAccess = access
-
-      },
-      onSongs: function (myArtists, mySongs, friendArtists, friendSongs) {
-        this.songsLoaded = true
-        this.myArtists = myArtists
-        this.mySongs = mySongs
-        this.friendArtists = friendArtists
-        this.friendSongs = friendSongs
-        console.log('Received songs')
-
-      },
-
       generateChart() {
         // Mark songs based on owner
         this.mySongs.map(song => {

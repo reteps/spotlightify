@@ -1,6 +1,6 @@
 <template>
   <div class='help'>
-    <v-dialog v-model="dialog">
+    <v-dialog v-model="dialog" width="800px">
       <template v-slot:activator="{ on }">
         <v-btn color="red lighten-2 mt-2" dark v-on="on">
           Help <v-icon>fa-question</v-icon>
@@ -31,11 +31,10 @@
     }
   }
 </script>
-<style lang='sass'>
-  @media (min-width: 800px)
-    .v-dialog
-      width: 50%
-  @media (max-width: 800px)
-    .v-dialog
-      width: 90%
+<style>
+  @media (max-width: 800px) {
+    .v-dialog {
+      width: 90% !important
+    }
+  }
 </style>

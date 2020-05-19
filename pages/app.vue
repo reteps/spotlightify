@@ -1,5 +1,4 @@
 <template>
-  <div class="app">
     <v-container>
       <FriendLogin v-if='!tokensLoaded'></FriendLogin>
       <MusicLoader v-if='tokensLoaded && !musicLoaded'></MusicLoader>
@@ -42,7 +41,6 @@
         </div>
       </div>
     </v-container>
-  </div>
 </template>
 
 <style lang="sass">

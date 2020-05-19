@@ -82,7 +82,11 @@
           }).then(songs => {
             console.log(`Received ${songs.length}`)
             return vm.loadArtists(songs)
-          }).then(artists => {
+          }).then(rawArtists => {
+            let artists = rawArtists.reduce((obj, val) => {
+              obj[val.id] = val
+              return obj
+            }, {})
             vm.$store.commit('setArtists', {
               user: 'friend',
               artists
@@ -102,7 +106,11 @@
           }).then(songs => {
             console.log(`Received ${songs.length} Songs`)
             return vm.loadArtists(songs)
-          }).then(artists => {
+          }).then(rawArtists => {
+            let artists = rawArtists.reduce((obj, val) => {
+              obj[val.id] = val
+              return obj
+            }, {})
             vm.$store.commit('setArtists', {
               user: 'self',
               artists

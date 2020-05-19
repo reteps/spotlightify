@@ -1,36 +1,40 @@
-  const express = require('express')
-  const passport = require('passport')
-  const consola = require('consola')
-  const SpotifyStrategy = require('passport-spotify').Strategy;
-  const { Nuxt, Builder } = require('nuxt')
-  // My stuff
-  const myLib = require('../api/lib')
-  const backend = require('../api/index')
-  const config = require('../nuxt.config.js')
-  require('dotenv').config()
+'use strict'
+const express = require('express')
+const passport = require('passport')
+const consola = require('consola')
+const SpotifyStrategy = require('passport-spotify').Strategy;
+const { Nuxt, Builder } = require('nuxt')
+// My stuff
+const myLib = require('../api/lib')
+const backend = require('../api/index')
+const config = require('../nuxt.config.js')
+require('dotenv').config()
 
-  const app = express()
+const app = express()
 
-  // Initialize Passport
-  passport.use(new SpotifyStrategy({
-    clientID: process.env.CLIENT_ID,
-    clientSecret: process.env.CLIENT_SECRET,
-    callbackURL: process.env.BASE_URL + '/api/callback'
-  },
-  function (accessToken, refreshToken, expires_in, profile, done) {
-    process.nextTick(function () { // On next DOM update
-      return done(null, {
-        access: accessToken,
-        refresh: refreshToken
-      }); // resolve with the profile
-    });
-  }
-  ))
-  passport.serializeUser(function (tokens, done) { done(null, tokens) })
-  passport.deserializeUser(function (obj, done) { done(null, obj) })
-  app.use(myLib.session)
-  app.use(passport.initialize())
-  app.use(passport.session())
+// Initialize Passport
+passport.use(new SpotifyStrategy({
+  clientID: process.env.CLIENT_ID,
+  clientSecret: process.env.CLIENT_SECRET,
+  callbackURL: process.env.BASE_URL + '/api/callback'
+},
+function (accessToken, refreshToken, expires_in, profile, done) {
+  process.nextTick(function () { // On next DOM update
+    return done(null, {
+      access: accessToken,
+      refresh: refreshToken,
+      id: profile.id
+    }) // resolve with the profile
+  })
+}
+))
+passport.serializeUser(function (userData, done) {
+  done(null, userData)
+})
+passport.deserializeUser(function (obj, done) { done(null, obj) })
+app.use(myLib.session)
+app.use(passport.initialize())
+app.use(passport.session())
 app.use('/app', myLib.checkAuth(process.env.BASE_URL))
 app.get('/logout', function (req, res) {
   req.session.destroy(function (err) {

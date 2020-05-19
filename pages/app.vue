@@ -4,15 +4,24 @@
       <FriendLogin v-if='friendRefresh==null' @tokens='onTokens'></FriendLogin>
       <MusicLoader :friendAccess='friendAccess' :friendRefresh='friendRefresh' v-if='friendRefresh!=null && !songsLoaded' @songs='onSongs'></MusicLoader>
       <div v-if="songsLoaded">
-        <v-btn-toggle v-model='listType'>
+        <v-row>
+        <v-col>
 
-        <!--<v-btn color="primary"> Generate Visual </v-btn>-->
+        <v-btn-toggle v-model='listType'>
         <v-btn color="primary" value="match">Songs in common</v-btn>
         <v-btn color="primary" value="album">Songs with a common album</v-btn>
         <v-btn color="primary" value="albumNew">New Songs with a common album</v-btn>
         <v-btn color="primary" value="artist">Songs in common artist</v-btn>
         <v-btn color="primary" value="artistNew">New Songs with a common artist</v-btn>
         </v-btn-toggle>
+        </v-col>
+        <v-col>
+          <v-form ref="form" @submit.prevent="submit">
+            <v-text-field label="Playlist Name" type='text' v-model="exportName"></v-text-field>
+            <v-btn :disabled='exportName==""' @click='exportCurrentPlaylist()'>Export</v-btn>
+          </v-form>
+        </v-col>
+        </v-row>
         <v-list>
           <v-list-item v-for="song in sharedSongs" :key="song.track.id">
             <v-list-item-avatar tile><v-img :src="song.track.album.images[2].url"></v-img> </v-list-item-avatar>
@@ -26,8 +35,8 @@
               </v-btn>
             </v-list-item-action>
             <v-list-item-action>
-              <v-btn icon @click="play(song.track.preview_url)">
-                <v-icon>{{ currentPlayback == song.track.preview_url ? 'fa-pause' : 'fa-play'}}</v-icon>
+              <v-btn icon :disabled="song.track.preview_url == null" @click="play(song.track.preview_url)">
+                <v-icon>{{ !ended && song.track.preview_url == currentPlayback && song.track.preview_url != null ? 'fa-pause' : 'fa-play'}}</v-icon>
               </v-btn>
             </v-list-item-action>
           </v-list-item>
@@ -79,7 +88,9 @@
         nodes: null,
         links: null,
         audioPlayer: null,
-        currentPlayback: null
+        currentPlayback: null,
+        ended: false,
+        exportName: ''
       }
     },
     computed: {
@@ -98,18 +109,33 @@
         } else {
           return []
         }
-      }
+      },
     },
     mounted() {
       this.audioPlayer = new Audio();
+      this.audioPlayer.onended = this.handleEnded
     },
     methods: {
+      exportCurrentPlaylist() {
+        let uris = this.sharedSongs.map(song => song.track.uri)
+        axios.post(`/api/export/${this.exportName}`, uris).then(() => {
+          this.$toast.info('Playlist successfully created!')
+          this.exportName = ''
+        })
+        //axios.get(`/api/create/${this.exportName}`)
+      },
+      handleEnded() {
+        console.log('Song has now ended.')
+        this.ended = true
+        this.currentPlayback = null
+      },
       play(url) {
         if (this.currentPlayback == url) {
           this.audioPlayer.pause()
           this.currentPlayback = null
           return
         }
+        this.ended = false
         this.currentPlayback = url
         this.audioPlayer.src = url
         this.audioPlayer.load()

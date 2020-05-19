@@ -67,7 +67,7 @@ export default {
           vm.songLoadProgress += 1
           return songs
         }).then(songs => {
-          console.log(`Received ${songs.length}`)
+          console.log(`Received ${songs.length} Songs`)
           return vm.loadArtists(songs)
         }).then(artists => {
           vm.myArtists = artists
@@ -76,10 +76,9 @@ export default {
         })
       },
       loadArtists(dataset) {
-        console.log('The dataset is', dataset.length)
         return axios.post('/api/artists', this.flattenSongArtists(dataset))
           .then(res => {
-            console.log('Received reply')
+            console.log(`Artists loaded from dataset of ${dataset.length} songs`)
             return res.data
           }).catch(err => {
             console.log(`ERR: ${err}`)
@@ -91,6 +90,7 @@ export default {
       },
       retrievePlaylist(id, token='') {
         let func = (id == 'Liked Songs') ? this.loadSongs : this.loadPlaylist
+        console.log(`Attempting load of playlist id: ${id}`)
         return func(id, token)
       },
       loadSongs: function(_, token) {

@@ -43,6 +43,33 @@ const flattenSongArtists = (songs) => {
   let artists = songs.flatMap(song => song.track.artists).map(a => a.id)
   return artists.filter((artist, index, arr) => artists.indexOf(artist) === index && artist != null)
 }
+const addSongs = (token, uris, playlistId) => {
+  let chunks = _.chunk(uris, 100)
+  return new Promise((resolve, reject) => {
+    let completedCount = 0
+    let chunks = _.chunk(uris, 100)
+    for (let chunk of chunks) {
+      console.log('ATTEMPTING CHUNKY')
+      axios.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+      {uris: chunk},
+      {headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }).then(resp => {
+        completedCount += chunk.length
+        if (completedCount >= uris.length) {
+          resolve()
+        }
+        console.log(`Successfully added ${completedCount} songs to playlist id ${playlistId}`)
+      }).catch(err => {
+        console.log('There was an error:/', err)
+        reject(err)
+      })
+    }
+
+  })
+}
+
 const addGenre = (artists) => {
   console.log(`adding genres for artists.`)
   let artistsWithGenres = artists
@@ -219,5 +246,6 @@ module.exports = {
   generateNodesAndLinks,
   flattenSongArtists,
   getTracks,
-  getArtists
+  getArtists,
+  addSongs
 }

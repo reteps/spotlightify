@@ -32,9 +32,10 @@
   }
 </script>
 <style lang='sass'>
-  .v-dialog
-    width: 90%
   @media (min-width: 800px)
     .v-dialog
       width: 50%
+  @media (max-width: 800px)
+    .v-dialog
+      width: 90%
 </style>

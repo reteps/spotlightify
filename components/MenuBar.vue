@@ -1,7 +1,7 @@
 <template>
         <v-app-bar app dark>
 
-          <v-toolbar-title>Vibe Check</v-toolbar-title>
+          <v-toolbar-title> Spotlightify </v-toolbar-title>
           <v-spacer></v-spacer>
           <v-btn color="indigo" href='/logout'>
             <v-icon>fa-sign-out-alt</v-icon>

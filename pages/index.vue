@@ -35,24 +35,30 @@ export default Vue.extend({
   align-items: center
   text-align: center
   .spotify-img
-    height: 2em
+    height: 1.5em
     width: auto
   a
     text-decoration: none
-    font-size: 3em
+    font-size: 1.5em
     span
       padding-right: 10px
     color: black
     display: flex
     align-items: center
-    border: 5px solid black
+    border: 2px solid black
+    box-shadow: 2px 5px
     padding: .25em
-    border-radius: 20px
-    box-shadow: 5px 10px
+    border-radius: 25px
     transition: 1s
   a:hover
     box-shadow: 0px 0px
     transform: translate(5px, 10px)
+  @media (min-width: 800px)
+    a
+      font-size: 3em
+      box-shadow: 5px 10px
+    .spotify-img
+      height: 2em
 .menu
   a
     pointer-events: none

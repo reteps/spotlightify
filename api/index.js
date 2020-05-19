@@ -18,7 +18,7 @@ backend.get('/', (req, res) => {
   res.send('<h1>Api working!</h1>')
 })
 backend.get('/auth',passport.authenticate('spotify', {
-  scope: ['user-library-read', 'playlist-read-collaborative', 'playlist-modify-public'],
+  scope: [, 'playlist-read-private', 'user-library-read', 'playlist-read-collaborative', 'playlist-modify-public'],
   showDialog: true
 }))
 backend.get('/callback',

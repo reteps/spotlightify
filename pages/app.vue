@@ -8,8 +8,9 @@
         <v-col>
         <!-- sus stuff https://stackoverflow.com/questions/55188478/meaning-of-v-slotactivator-on/55194478 -->
         <v-btn-toggle v-model='listType'>
-          <InfoButton v-for="sort in sortTypes" :color="sort.color" :text='sort.text' :help='sort.help'></InfoButton>
+          <InfoButton v-for="sort in sortTypes" :key='sort.text' :color="sort.color" :text='sort.text' :help='sort.help'></InfoButton>
         </v-btn-toggle>
+          <HelpPopup></HelpPopup>
         </v-col>
         <v-col>
           <v-form ref="form" @submit.prevent="submit">
@@ -45,12 +46,9 @@
 </template>
 
 <style lang="sass">
-  .container
-    margin: 0 auto
-    min-height: 80vh
-    display: flex
-    flex-direction: column
-
+  @media (max-width: 800px)
+    .v-btn-toggle
+      flex-direction: column
 </style>
 <script>
   const axios = require('axios')
@@ -64,22 +62,18 @@
   import FriendLogin from '@/components/FriendLogin.vue'
   import MusicLoader from '@/components/MusicLoader.vue'
   import InfoButton from '@/components/InfoButton.vue'
+  import HelpPopup from '@/components/HelpPopup.vue'
   export default {
     components: {
       FriendLogin,
       MusicLoader,
-      InfoButton
+      InfoButton,
+      HelpPopup
     },
     name: 'App',
     data() {
       return {
-
-        friendRefresh: null,
-        friendAccess: null,
-
-        songsLoaded: false,
         listType: '',
-
         nodes: null,
         links: null,
         audioPlayer: null,

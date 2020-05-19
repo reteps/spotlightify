@@ -50,13 +50,13 @@ export default Vue.extend({
     padding: .25em
     border-radius: 25px
     transition: 1s
-  a:hover
-    box-shadow: 0px 0px
-    transform: translate(5px, 10px)
   @media (min-width: 800px)
     a
       font-size: 3em
       box-shadow: 5px 10px
+    a:hover
+      box-shadow: 0px 0px
+      transform: translate(5px, 10px)
     .spotify-img
       height: 2em
 .menu

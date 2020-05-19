@@ -6,13 +6,9 @@
       <div v-if="songsLoaded">
         <v-row>
         <v-col>
-
+        <!-- sus stuff https://stackoverflow.com/questions/55188478/meaning-of-v-slotactivator-on/55194478 -->
         <v-btn-toggle v-model='listType'>
-        <v-btn color="primary" value="match">Songs in common</v-btn>
-        <v-btn color="primary" value="album">Songs with a common album</v-btn>
-        <v-btn color="primary" value="albumNew">New Songs with a common album</v-btn>
-        <v-btn color="primary" value="artist">Songs in common artist</v-btn>
-        <v-btn color="primary" value="artistNew">New Songs with a common artist</v-btn>
+          <InfoButton v-for="sort in sortTypes" :color="sort.color" :text='sort.text' :help='sort.help'></InfoButton>
         </v-btn-toggle>
         </v-col>
         <v-col>
@@ -66,10 +62,12 @@
   import * as d3 from 'd3'
   import FriendLogin from '@/components/FriendLogin.vue'
   import MusicLoader from '@/components/MusicLoader.vue'
+  import InfoButton from '@/components/InfoButton.vue'
   export default {
     components: {
       FriendLogin,
-      MusicLoader
+      MusicLoader,
+      InfoButton
     },
     name: 'App',
     data() {
@@ -90,25 +88,61 @@
         audioPlayer: null,
         currentPlayback: null,
         ended: false,
-        exportName: ''
+        exportName: '',
+        sortTypes: [
+          {
+            text: 'Match',
+            help: 'Songs that are in both playlists',
+            sort: () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.id),
+            color: '#5db0f2'
+          },
+          {
+            text: 'Album Match',
+            help: 'Songs of albums that are in both playlists',
+            sort: () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.album.id),
+            color: '#8cc6f6'
+          },
+          {
+            text: 'Your Album Match',
+            help: 'Songs of albums that are in both playlists but not in your playlist',
+            sort: () => _.differenceBy(_.intersectionBy(this.friendSongs, this.mySongs, s => s.track.album.id), this.mySongs, s=>s.track.id),
+            color: '#b9dcf9'
+          },
+          {
+            text: 'Friend Album Match',
+            help: 'Songs of albums that are in both playlists but not in their playlist',
+            sort: () => _.differenceBy(_.intersectionBy(this.mySongs, this.friendSongs, s => s.track.album.id), this.friendSongs, s=>s.track.id),
+            color: '#e2f1fc'
+          },
+          {
+            text: 'Artist Match',
+            help: 'Songs of artists that are in both playlists',
+            sort: () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.artists[0].id),
+            color: '#7e3ff2'
+          },
+          {
+            text: 'Your Artist Match',
+            help: 'Songs of artists that are in both playlists but not in your playlist',
+            sort: () => _.differenceBy(_.intersectionBy(this.friendSongs, this.mySongs, s => s.track.artists[0].id), this.mySongs, s=>s.track.id),
+            color: '#9965f4'
+          },
+          {
+            text: 'Friend Artist Match',
+            help: 'Songs of artists that are in both playlists but not in their playlist',
+            sort: () => _.differenceBy(_.intersectionBy(this.mySongs, this.friendSongs, s => s.track.artists[0].id), this.friendSongs, s=>s.track.id),
+            color: '#b794f6'
+          }
+        ]
       }
     },
     computed: {
       sharedSongs() {
         console.log('Recomputing with list type', this.listType)
-        if (this.listType == 'match') {
-          return _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.id)
-        } else if (this.listType == 'album') {
-          return _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.album.id)
-        } else if (this.listType == 'albumNew') {
-          return _.differenceBy(_.intersectionBy(this.friendSongs, this.mySongs, s => s.track.album.id), this.mySongs, s=>s.track.id)
-        } else if (this.listType == 'artist') {
-          return _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.artists[0].id)
-        } else if (this.listType == 'artistNew') {
-          return _.differenceBy(_.intersectionBy(this.friendSongs, this.mySongs, s => s.track.artists[0].id), s=>s.track.id)
-        } else {
+        let currentSort = _.find(this.sortTypes, s => s.text == this.listType)
+        if (currentSort === undefined) {
           return []
         }
+        return currentSort.sort()
       },
     },
     mounted() {

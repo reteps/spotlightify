@@ -3,7 +3,7 @@
     <v-container>
       <v-row>
         <v-col>
-          <h4 class="text-center"> Now select which playlists you would like to compare</h4>
+          <h4 class="text-center"> Now select which playlist(s) you would like to compare</h4>
         </v-col>
       </v-row>
       <v-row>
@@ -11,16 +11,16 @@
           <v-select v-model="selectedMyPlaylist" :items="myPlaylistNames" label="My Playlist"></v-select>
         </v-col>
       </v-row>
-      <v-row>
+      <v-row v-if="friendAccess !== null">
         <v-col>
           <v-select v-model="selectedFriendPlaylist" :items="friendPlaylistNames" label="Friend Playlist"></v-select>
         </v-col>
       </v-row>
       <v-row>
         <v-col>
-          <v-btn class="text-center" :disabled="selectedFriendPlaylist == null || selectedMyPlaylist == null"
+          <v-btn class="text-center" :disabled="(friendAccess !== null && selectedFriendPlaylist == null) || selectedMyPlaylist == null"
             color="primary" @click="retrievePlaylistsAndArtists">Lets go!</v-btn>
-          <v-progress-circular v-if="songLoadProgress != -1" :value="songLoadProgress * 25"></v-progress-circular>
+          <v-progress-circular v-if="songLoadProgress != -1" :value="songLoadProgress * (friendAccess !== null ? 25 : 50)"></v-progress-circular>
         </v-col>
       </v-row>
     </v-container>
@@ -50,7 +50,7 @@
         if (!this.friendPlaylists) {
           return []
         }
-        return ['Liked Songs'].concat(this.friendPlaylists.filter(item => item.public).map(item => item.name))
+        return ['Liked Songs'].concat(this.friendPlaylists.map(item => item.name))
       },
       myPlaylistNames() {
         if (!this.myPlaylists) {
@@ -59,7 +59,7 @@
         return ['Liked Songs'].concat(this.myPlaylists.map(item => item.name))
       },
       ...mapState({
-        friendAccess: state => state.friend.access
+        friendAccess: state => state.friend.access || null
       })
     },
     created() {
@@ -70,15 +70,16 @@
         let vm = this
         this.startedLoad = true
         this.songLoadProgress = 0
-        this.retrievePlaylist((this.friendPlaylists.find(o => o.name == vm.selectedFriendPlaylist) || {
-            id: 'Liked Songs'
-          }).id, this.friendAccess).then(songs => {
-            vm.$store.commit('setSongs', {
-              user: 'friend',
-              songs
-            })
-            vm.songLoadProgress += 1
-            return songs
+        if (this.friendAccess !== null) {
+          let playlistID = (this.friendPlaylists.find(o => o.name == vm.selectedFriendPlaylist) || { id: 'Liked Songs' }).id
+          this.retrievePlaylist(playlistID, this.friendAccess)
+          .then(songs => {
+              vm.$store.commit('setSongs', {
+                user: 'friend',
+                songs
+              })
+              vm.songLoadProgress += 1
+              return songs
           }).then(songs => {
             console.log(`Received ${songs.length}`)
             return vm.loadArtists(songs)
@@ -93,31 +94,30 @@
             })
             vm.songLoadProgress += 1
           })
-          .then(() => vm.retrievePlaylist((vm.myPlaylists.find(o => o.name == vm.selectedMyPlaylist) || {
-            id: 'Liked Songs'
-          }).id)) // Now load my songs
-          .then(songs => {
-            vm.$store.commit('setSongs', {
-              user: 'self',
-              songs
-            })
-            vm.songLoadProgress += 1
-            return songs
-          }).then(songs => {
-            console.log(`Received ${songs.length} Songs`)
-            return vm.loadArtists(songs)
-          }).then(rawArtists => {
-            let artists = rawArtists.reduce((obj, val) => {
-              obj[val.id] = val
-              return obj
-            }, {})
-            vm.$store.commit('setArtists', {
-              user: 'self',
-              artists
-            })
-            vm.$store.commit('musicLoaded', true)
-            vm.songLoadProgress += 1
+        }
+        this.retrievePlaylist((vm.myPlaylists.find(o => o.name == vm.selectedMyPlaylist) || { id: 'Liked Songs' }).id) // Now load my songs
+        .then(songs => {
+          vm.$store.commit('setSongs', {
+            user: 'self',
+            songs
           })
+          vm.songLoadProgress += 1
+          return songs
+        }).then(songs => {
+          console.log(`Received ${songs.length} Songs`)
+          return vm.loadArtists(songs)
+        }).then(rawArtists => {
+          let artists = rawArtists.reduce((obj, val) => {
+            obj[val.id] = val
+            return obj
+          }, {})
+          vm.$store.commit('setArtists', {
+            user: 'self',
+            artists
+          })
+          vm.$store.commit('musicLoaded', true)
+          vm.songLoadProgress += 1
+        })
       },
       loadArtists(dataset) {
         return axios.post('/api/artists', this.flattenSongArtists(dataset))
@@ -149,10 +149,12 @@
       },
       loadPlaylists() {
         let vm = this;
-        axios.get(`/api/playlists/${this.friendAccess}`).then(res => {
-          vm.friendPlaylists = res.data.items
-          return axios.get('/api/playlists')
-        }).then(res => {
+        if (this.friendAccess) {
+          axios.get(`/api/playlists/${this.friendAccess}`).then(res => {
+            vm.friendPlaylists = res.data.items
+          })
+        }
+        axios.get('/api/playlists').then(res => {
           console.log(res.data)
           vm.myPlaylists = res.data.items
         })

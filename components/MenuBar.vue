@@ -3,9 +3,6 @@
 
           <v-toolbar-title> Spotlightify </v-toolbar-title>
           <v-spacer></v-spacer>
-          <v-btn color="indigo" nuxt to='/stats'>
-            <span class="ml-2">Stats</span>
-          </v-btn>
           <v-btn color="indigo" href='/logout'>
             <v-icon>fa-sign-out-alt</v-icon>
             <span class="ml-2">Sign out</span>

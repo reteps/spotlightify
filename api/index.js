@@ -50,7 +50,22 @@ backend.get('/token', myLib.checkAuth(process.env.BASE_URL), (req, res, next) =>
   res.json({message: req.user.refresh})
 })
 
+backend.post('/audio-features', myLib.checkAuth(process.env.BASE_URL), (req, res, next) => {
+  console.log(req.body)
+  myLib.getAudioFeatures(req.user.access, req.body).then(songData => {
+    res.json(songData)
+  }).catch(err => {
+    console.error(err)
+    res.json(err)
+  })
 
+})
+backend.post('/related', myLib.checkAuth(process.env.BASE_URL), (req, res, next) => {
+  myLib.getRelated(req.user.access, req.body)
+  .then(relatedData => {
+    res.json(relatedData)
+  })
+})
 backend.post('/artists', myLib.checkAuth(process.env.BASE_URL), (req, res) => {
   myLib.getArtists(req.user.access,  req.body)
   .then(artists => {

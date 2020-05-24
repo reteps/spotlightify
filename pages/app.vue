@@ -81,44 +81,44 @@
         sortTypes: [
           {
             text: 'Match',
-            help: 'Songs that are in both playlists',
+            help: 'Songs that you both listen to',
             sort: () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.id),
             color: '#5db0f2'
           },
           {
             text: 'Album Match',
-            help: 'Songs of albums that are in both playlists',
-            sort: () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.album.id),
-            color: '#8cc6f6'
-          },
-          {
-            text: 'Your Album Match',
-            help: 'Songs of albums that are in both playlists but not in your playlist',
-            sort: () => _.differenceBy(_.intersectionBy(this.friendSongs, this.mySongs, s => s.track.album.id), this.mySongs, s=>s.track.id),
-            color: '#b9dcf9'
-          },
-          {
-            text: 'Friend Album Match',
-            help: 'Songs of albums that are in both playlists but not in their playlist',
-            sort: () => _.differenceBy(_.intersectionBy(this.mySongs, this.friendSongs, s => s.track.album.id), this.friendSongs, s=>s.track.id),
-            color: '#e2f1fc'
+            help: 'Songs with an album you both listen to',
+            sort: () => _.uniqBy(this.friendSongs.concat(this.mySongs), s => s.track.id).filter(s => this.sharedAlbums.indexOf(s.track.album.id) > -1),
+            color: '#5db0f2'
           },
           {
             text: 'Artist Match',
-            help: 'Songs of artists that are in both playlists',
-            sort: () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.artists[0].id),
+            help: 'Songs of artists you both listen to',
+            sort: () => _.uniqBy(this.friendSongs.concat(this.mySongs), s => s.track.id).filter(s => this.partialCommon(s, this.sharedArtists, 'artists')),
+            color: '#5db0f2'
+          },
+          {
+            text: 'Your Album Match',
+            help: 'New songs in albums you already listen to',
+            sort: () => _.uniqBy(this.friendSongs, s => s.track.id).filter(s => this.mySongs.map(s => s.track.album.id).indexOf(s.track.album.id) > -1),
             color: '#7e3ff2'
           },
           {
             text: 'Your Artist Match',
-            help: 'Songs of artists that are in both playlists but not in your playlist',
-            sort: () => _.differenceBy(_.intersectionBy(this.friendSongs, this.mySongs, s => s.track.artists[0].id), this.mySongs, s=>s.track.id),
-            color: '#9965f4'
+            help: 'New songs from artists you already listen to',
+            sort: () => _.differenceBy(this.friendSongs, this.mySongs, s => s.track.id).filter(s => this.partialCommon(s, this.sharedArtists, 'artists')),
+            color: '#7e3ff2'
+          },
+          {
+            text: 'Friend Album Match',
+            help: 'New Songs for them in albums they already listen to',
+            sort: () => _.uniqBy(this.mySongs, s => s.track.id).filter(s => this.friendSongs.map(s => s.track.album.id).indexOf(s.track.album.id) > -1),
+            color: '#b794f6'
           },
           {
             text: 'Friend Artist Match',
-            help: 'Songs of artists that are in both playlists but not in their playlist',
-            sort: () => _.differenceBy(_.intersectionBy(this.mySongs, this.friendSongs, s => s.track.artists[0].id), this.friendSongs, s=>s.track.id),
+            help: 'New songs for them from artists they already listen to',
+            sort: () => _.differenceBy(this.mySongs, this.friendSongs, s => s.track.id).filter(s => this.partialCommon(s, this.sharedArtists, 'artists')),
             color: '#b794f6'
           }
         ]
@@ -131,7 +131,15 @@
         if (currentSort === undefined) {
           return []
         }
-        return currentSort.sort()
+        return currentSort.sort().filter(s => s.track.album.images[2] != undefined)
+      },
+      sharedArtists() {
+        console.log(_.intersectionBy([...Object.keys(this.friendArtists)], [...Object.keys(this.myArtists)]))
+        return _.intersectionBy(Object.keys(this.friendArtists), Object.keys(this.myArtists))
+      },
+      sharedAlbums() {
+        let mappedFriend = this.friendSongs.map(s => s.track.album.id)
+        return this.mySongs.map(s => s.track.album.id).filter(value => -1 !== mappedFriend.indexOf(value))
       },
       ...mapState([
         'musicLoaded',
@@ -149,6 +157,32 @@
       this.audioPlayer.onended = this.handleEnded
     },
     methods: {
+      partialCommon(song, ids, property=null) {
+        if (property == null) {
+          return song.track.map(a => a.id).some(id => ids.indexOf(id) > -1)
+        } else if (property == 'artists') {
+          return song.track[property].map(a => a.id).some(id => ids.indexOf(id) > -1)
+        }
+      },
+      async artistMatch() {
+        let myIDs = Object.keys(this.myArtists)
+        console.log(myIDs)
+        let vm = this;
+        return matches = await axios.post(`/api/related`, myIDs).then(info => {
+          console.log('Success')
+          let flattenedArtists = info.data.filter(val => val !== null).filter(val => val.artists.length > 0).flatMap(val => val.artists).map(artist => artist.id)
+          let withAdditions = [...new Set(myIDs.concat(flattenedArtists))]
+          return withAdditions
+        }).then(ids => {
+          let possibleMatchingIDs = _.intersectionBy(ids, Object.keys(vm.friendArtists))
+          console.log(possibleMatchingIDs)
+          console.log(vm.friendSongs.map(s => s.track.artists.map(a => a.id).map(id => possibleMatchingIDs.indexOf(id))))
+          return vm.friendSongs.filter(s => vm.partialCommon(song, possibleMatchingIDs, 'artists'))
+        }).then(matches => {
+          console.log(matches)
+        })
+        return []
+      },
       exportCurrentPlaylist() {
         let uris = this.sharedSongs.map(song => song.track.uri)
         axios.post(`/api/export/${this.exportName}`, uris).then(() => {

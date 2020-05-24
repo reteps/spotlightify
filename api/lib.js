@@ -240,6 +240,73 @@ function getArtists(token, artistIDs) {
 
   })
 }
+function getRelated(token, artistIDs) {
+  return new Promise((resolve, reject) => {
+
+    let finished = []
+    artistIDs.forEach(id => {
+      getRelatedHelper(`https://api.spotify.com/v1/artists/${id}/related-artists`, {
+        'Authorization': `Bearer ${token}`
+      }).then(response => {
+        finished.push(response)
+        if (finished.length == artistIDs.length) {
+          resolve(finished)
+        }
+      }).catch(err => {
+        reject(err)
+      })
+    })
+  })
+}
+const waitF = time => new Promise(resolve => setTimeout(resolve, time * 1000))
+function getRelatedHelper(url, headers) {
+  return new Promise((resolve, reject) => {
+  axios.get(url, {headers}).then(res => {
+    resolve(res.data)
+  }).catch(err => {
+        console.log('There was an error')
+        if (!err.response || err.response.status == 429) {
+          console.log('Retrying...')
+
+          let timeToWait = err.response ? parseInt(err.response.headers['retry-after'], 10) : 5
+          console.log('wait for it', timeToWait)
+          waitF(timeToWait).then(getRelatedHelper(url, headers))
+          .then(d => resolve(d))
+          .catch(e => reject(err))
+        } else {
+          console.log(err)
+          reject(err)
+        }
+  })
+  })
+}
+function getAudioFeatures(token, songIDs) {
+  return new Promise((resolve, reject) => {
+    console.log('Running...')
+    let features = []
+    let chunks = _.chunk(songIDs, 100)
+    for (let chunk of chunks) {
+      axios.get("https://api.spotify.com/v1/audio-features", {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        params: {
+          ids: _.join(chunk, ',')
+        }
+      }).then(resp => {
+        console.log(features.length)
+        features.push(...resp.data.audio_features)
+        if (songIDs.length == features.length) {
+          resolve(features)
+        }
+      }).catch(err => {
+
+        reject(err)
+      })
+    }
+
+  })
+}
 module.exports = {
   session,
   checkAuth,
@@ -247,5 +314,7 @@ module.exports = {
   flattenSongArtists,
   getTracks,
   getArtists,
-  addSongs
+  addSongs,
+  getRelated,
+  getAudioFeatures
 }

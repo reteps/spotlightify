@@ -8,7 +8,7 @@
       </template>
 
       <v-card>
-        <v-card-title class="headline grey lighten-2" primary-title> Understanding playlist overlap </v-card-title>
+        <v-card-title class="headline grey lighten-2" primary-title> Playlist Overlap </v-card-title>
 
         <v-img src="/explanation.png"></v-img>
 

@@ -6,11 +6,26 @@
         <v-row>
         <v-col>
         <!-- sus stuff https://stackoverflow.com/questions/55188478/meaning-of-v-slotactivator-on/55194478 -->
-        <v-btn-toggle v-model='listType'>
-          <InfoButton v-for="sort in sortTypes" :key='sort.text' :color="sort.color" :text='sort.text' :help='sort.help'></InfoButton>
+        <div> I want music for ... </div>
+        <v-btn-toggle v-model='who'>
+          <!--<InfoButton v-for="sort in sortTypes" :key='sort.text' :color="sort.color" :text='sort.text' :help='sort.help'></InfoButton>-->
+          <InfoButton color='#79a3f7' text='Myself' help='New songs that are not in my playlist' ></InfoButton>
+          <InfoButton color='#79a3f7' text='My Friend' help='Songs that are not in my friends playlist' ></InfoButton>
+          <InfoButton color='#79a3f7' text='Both' help='Songs from both playlists that meet criteria' ></InfoButton>
+        </v-btn-toggle>
+        </v-col>
+        <v-col>
+        <div> I want songs with the same ... </div>
+        <v-btn-toggle v-model='kind'>
+          <!--<InfoButton text='-'for="sort in sortTypes" :key='sort.text' :color="sort.color" :text='sort.text' :help='sort.help'></InfoButton>-->
+          <InfoButton color='#cc74f2' text='Name' help='The exact same song (the target does not matter)' ></InfoButton>
+          <InfoButton color='#cc74f2' text='Album' help='The same album (Recommended)'></InfoButton>
+          <InfoButton color='#cc74f2' text='Artist' help='The same artist'></InfoButton>
         </v-btn-toggle>
           <HelpPopup></HelpPopup>
         </v-col>
+        </v-row>
+        <v-row>
         <v-col>
           <v-form ref="form" @submit.prevent="submit">
             <v-text-field label="Playlist Name" type='text' v-model="exportName"></v-text-field>
@@ -46,7 +61,7 @@
 <style lang="sass">
   @media (max-width: 800px)
     .v-btn-toggle
-      flex-direction: column
+      flex-direction: row
 </style>
 <script>
   const axios = require('axios')
@@ -71,7 +86,8 @@
     name: 'App',
     data() {
       return {
-        listType: '',
+        who: '',
+        kind: '',
         nodes: null,
         links: null,
         audioPlayer: null,
@@ -80,51 +96,48 @@
         exportName: '',
         sortTypes: [
           {
-            text: 'Match',
-            help: 'Songs that you both listen to',
-            sort: () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.id),
-            color: '#5db0f2'
+            text: 'myselfname',
+            sort: () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.id)
           },
           {
-            text: 'Album Match',
-            help: 'Songs with an album you both listen to',
-            sort: () => _.uniqBy(this.friendSongs.concat(this.mySongs), s => s.track.id).filter(s => this.sharedAlbums.indexOf(s.track.album.id) > -1),
-            color: '#5db0f2'
+            text: 'my friendname',
+            sort: () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.id)
           },
           {
-            text: 'Artist Match',
-            help: 'Songs of artists you both listen to',
-            sort: () => _.uniqBy(this.friendSongs.concat(this.mySongs), s => s.track.id).filter(s => this.partialCommon(s, this.sharedArtists, 'artists')),
-            color: '#5db0f2'
+            text: 'bothname',
+            sort: () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.id)
           },
           {
-            text: 'Your Album Match',
-            help: 'New songs in albums you already listen to',
-            sort: () => _.uniqBy(this.friendSongs, s => s.track.id).filter(s => this.mySongs.map(s => s.track.album.id).indexOf(s.track.album.id) > -1),
-            color: '#7e3ff2'
+            text: 'bothalbum',
+            sort: () => _.uniqBy(this.friendSongs.concat(this.mySongs), s => s.track.id).filter(s => this.sharedAlbums.indexOf(s.track.album.id) > -1)
           },
           {
-            text: 'Your Artist Match',
-            help: 'New songs from artists you already listen to',
-            sort: () => _.differenceBy(this.friendSongs, this.mySongs, s => s.track.id).filter(s => this.partialCommon(s, this.sharedArtists, 'artists')),
-            color: '#7e3ff2'
+            text: 'bothartist',
+            sort: () => _.uniqBy(this.friendSongs.concat(this.mySongs), s => s.track.id).filter(s => this.partialCommon(s, this.sharedArtists, 'artists'))
           },
           {
-            text: 'Friend Album Match',
-            help: 'New Songs for them in albums they already listen to',
-            sort: () => _.uniqBy(this.mySongs, s => s.track.id).filter(s => this.friendSongs.map(s => s.track.album.id).indexOf(s.track.album.id) > -1),
-            color: '#b794f6'
+            text: 'myselfalbum',
+            sort: () => _.uniqBy(this.friendSongs, s => s.track.id).filter(s => this.mySongs.map(s => s.track.album.id).indexOf(s.track.album.id) > -1)
           },
           {
-            text: 'Friend Artist Match',
-            help: 'New songs for them from artists they already listen to',
-            sort: () => _.differenceBy(this.mySongs, this.friendSongs, s => s.track.id).filter(s => this.partialCommon(s, this.sharedArtists, 'artists')),
-            color: '#b794f6'
+            text: 'myselfartist',
+            sort: () => _.differenceBy(this.friendSongs, this.mySongs, s => s.track.id).filter(s => this.partialCommon(s, this.sharedArtists, 'artists'))
+          },
+          {
+            text: 'my friendalbum',
+            sort: () => _.uniqBy(this.mySongs, s => s.track.id).filter(s => this.friendSongs.map(s => s.track.album.id).indexOf(s.track.album.id) > -1)
+          },
+          {
+            text: 'my friendartist',
+            sort: () => _.differenceBy(this.mySongs, this.friendSongs, s => s.track.id).filter(s => this.partialCommon(s, this.sharedArtists, 'artists'))
           }
         ]
       }
     },
     computed: {
+      listType() {
+        return this.who + this.kind
+      },
       sharedSongs() {
         console.log('Recomputing with list type', this.listType)
         let currentSort = _.find(this.sortTypes, s => s.text == this.listType)

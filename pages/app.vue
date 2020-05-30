@@ -8,7 +8,6 @@
         <!-- sus stuff https://stackoverflow.com/questions/55188478/meaning-of-v-slotactivator-on/55194478 -->
         <div> I want music for ... </div>
         <v-btn-toggle v-model='who'>
-          <!--<InfoButton v-for="sort in sortTypes" :key='sort.text' :color="sort.color" :text='sort.text' :help='sort.help'></InfoButton>-->
           <InfoButton color='#79a3f7' text='Myself' help='New songs that are not in my playlist' ></InfoButton>
           <InfoButton color='#79a3f7' text='My Friend' help='Songs that are not in my friends playlist' ></InfoButton>
           <InfoButton color='#79a3f7' text='Both' help='Songs from both playlists that meet criteria' ></InfoButton>
@@ -17,7 +16,6 @@
         <v-col>
         <div> I want songs with the same ... </div>
         <v-btn-toggle v-model='kind'>
-          <!--<InfoButton text='-'for="sort in sortTypes" :key='sort.text' :color="sort.color" :text='sort.text' :help='sort.help'></InfoButton>-->
           <InfoButton color='#cc74f2' text='Name' help='The exact same song (the target does not matter)' ></InfoButton>
           <InfoButton color='#cc74f2' text='Album' help='The same album (Recommended)'></InfoButton>
           <InfoButton color='#cc74f2' text='Artist' help='The same artist'></InfoButton>
@@ -26,7 +24,10 @@
         </v-col>
         </v-row>
         <v-row>
-        <v-col>
+        <v-col cols='12' md='6'>
+          <v-select disable-lookup v-model="sortType" label="Sort By" :items="Object.keys(sortTypes)"></v-select>
+        </v-col>
+        <v-col cols='12' md='6'>
           <v-form ref="form" @submit.prevent="submit">
             <v-text-field label="Playlist Name" type='text' v-model="exportName"></v-text-field>
             <v-btn :disabled='exportName==""' @click='exportCurrentPlaylist()'>Export</v-btn>
@@ -88,63 +89,40 @@
       return {
         who: '',
         kind: '',
+        sortType: 'original',
         nodes: null,
         links: null,
         audioPlayer: null,
         currentPlayback: null,
         ended: false,
         exportName: '',
-        sortTypes: [
-          {
-            text: 'myselfname',
-            sort: () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.id)
-          },
-          {
-            text: 'my friendname',
-            sort: () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.id)
-          },
-          {
-            text: 'bothname',
-            sort: () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.id)
-          },
-          {
-            text: 'bothalbum',
-            sort: () => _.uniqBy(this.friendSongs.concat(this.mySongs), s => s.track.id).filter(s => this.sharedAlbums.indexOf(s.track.album.id) > -1)
-          },
-          {
-            text: 'bothartist',
-            sort: () => _.uniqBy(this.friendSongs.concat(this.mySongs), s => s.track.id).filter(s => this.partialCommon(s, this.sharedArtists, 'artists'))
-          },
-          {
-            text: 'myselfalbum',
-            sort: () => _.uniqBy(this.friendSongs, s => s.track.id).filter(s => this.mySongs.map(s => s.track.album.id).indexOf(s.track.album.id) > -1)
-          },
-          {
-            text: 'myselfartist',
-            sort: () => _.differenceBy(this.friendSongs, this.mySongs, s => s.track.id).filter(s => this.partialCommon(s, this.sharedArtists, 'artists'))
-          },
-          {
-            text: 'my friendalbum',
-            sort: () => _.uniqBy(this.mySongs, s => s.track.id).filter(s => this.friendSongs.map(s => s.track.album.id).indexOf(s.track.album.id) > -1)
-          },
-          {
-            text: 'my friendartist',
-            sort: () => _.differenceBy(this.mySongs, this.friendSongs, s => s.track.id).filter(s => this.partialCommon(s, this.sharedArtists, 'artists'))
-          }
-        ]
+        filterTypes: {
+          'myself-name': () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.id),
+          'myself-album': () => _.uniqBy(this.friendSongs, s => s.track.id).filter(s => this.mySongs.map(s => s.track.album.id).indexOf(s.track.album.id) > -1),
+          'myself-artist': () => _.differenceBy(this.friendSongs, this.mySongs, s => s.track.id).filter(s => this.partialCommon(s, this.sharedArtists, 'artists')),
+          'my-friend-name': () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.id),
+          'my-friend-album': () => _.uniqBy(this.mySongs, s => s.track.id).filter(s => this.friendSongs.map(s => s.track.album.id).indexOf(s.track.album.id) > -1),
+          'my-friend-artist': () => _.differenceBy(this.mySongs, this.friendSongs, s => s.track.id).filter(s => this.partialCommon(s, this.sharedArtists, 'artists')),
+          'both-name': () => _.intersectionBy(this.mySongs, this.friendSongs, s => s.track.id),
+          'both-album': () => _.uniqBy(this.friendSongs.concat(this.mySongs), s => s.track.id).filter(s => this.sharedAlbums.indexOf(s.track.album.id) > -1),
+          'both-artist': () => _.uniqBy(this.friendSongs.concat(this.mySongs), s => s.track.id).filter(s => this.partialCommon(s, this.sharedArtists, 'artists'))
+        },
+        sortTypes: {
+          'original': s => s,
+          'most popular': s => s.sort((a, b) => a.track.popularity >= b.track.popularity ? -1 : 1),
+          'least popular': s => s.sort((a, b) => a.track.popularity >= b.track.popularity ? 1 : -1)
+        }
       }
     },
     computed: {
       listType() {
-        return this.who + this.kind
+        return [this.who,this.kind].join('-')
       },
       sharedSongs() {
         console.log('Recomputing with list type', this.listType)
-        let currentSort = _.find(this.sortTypes, s => s.text == this.listType)
-        if (currentSort === undefined) {
-          return []
-        }
-        return currentSort.sort().filter(s => s.track.album.images[2] != undefined)
+        let filterFunc = this.filterTypes[this.listType] || (() => [])
+        let currentSongs = filterFunc().filter(s => s.track.album.images[2] != undefined)
+        return this.sortTypes[this.sortType](currentSongs)
       },
       sharedArtists() {
         console.log(_.intersectionBy([...Object.keys(this.friendArtists)], [...Object.keys(this.myArtists)]))

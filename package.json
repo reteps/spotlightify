@@ -35,7 +35,7 @@
     "@fortawesome/fontawesome-free": "^5.13.0",
     "@nuxt/typescript-build": "^0.6.6",
     "@nuxtjs/vuetify": "^1.11.2",
-    "node-sass": "^4.14.0",
+    "node-sass": "^7.0.0",
     "nodemon": "^1.18.9",
     "sass-loader": "^8.0.2"
   }

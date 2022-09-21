@@ -28,7 +28,7 @@
     "subgenre.js": "^1.0.3",
     "tsne-js": "^1.0.3",
     "vue-snack": "^0.1.4",
-    "vuetify": "^2.2.28",
+    "vuetify": "^2.6.10",
     "vuetify-toast-snackbar": "^0.6.1"
   },
   "devDependencies": {

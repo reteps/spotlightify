@@ -21,7 +21,7 @@
     "express-session": "^1.17.1",
     "fs": "0.0.1-security",
     "lodash": "^4.17.19",
-    "nuxt": "^2.12.2",
+    "nuxt": "^2.15.8",
     "passport": "^0.4.1",
     "passport-spotify": "^1.1.0",
     "querystring": "^0.2.0",
